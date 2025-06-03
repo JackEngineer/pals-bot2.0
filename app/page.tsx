@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import TelegramAuth from "@/components/TelegramAuth";
 
 // 声明 Telegram WebApp 类型
 declare global {
@@ -97,10 +98,15 @@ export default function Home() {
       <div className="max-w-md mx-auto">
         {/* 用户信息 */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-blue-800 mb-2">
+          <h1 className="text-2xl font-bold text-blue-800 mb-4">
             🍃 漂流瓶 🍃
           </h1>
-          {user && <p className="text-blue-600">欢迎, {user.first_name}!</p>}
+          {user && (
+            <p className="text-blue-600 mb-4">欢迎, {user.first_name}!</p>
+          )}
+
+          {/* Telegram 认证状态 */}
+          <TelegramAuth />
         </div>
 
         {/* 发现漂流瓶 */}

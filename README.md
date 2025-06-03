@@ -207,24 +207,106 @@ npx prisma db push --accept-data-loss
 
 ## 🔒 安全考虑
 
+### Telegram InitData 验证
+
+本项目实现了完整的 Telegram InitData 验证系统，确保用户身份的真实性和数据的安全性。
+
+#### 验证流程
+
+```typescript
+// 1. 核心验证函数
+import { validateTelegramInitData } from "@/lib/telegram-auth";
+
+export async function verifyTelegramUser(initData: string) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN!;
+  const validation = validateTelegramInitData(initData, botToken);
+
+  if (!validation.isValid) {
+    throw new Error(`认证失败: ${validation.error}`);
+  }
+
+  return validation.data;
+}
+
+// 2. API 路由验证
+// /app/api/auth/telegram/route.ts
+export async function POST(request: NextRequest) {
+  const { initData } = await request.json();
+  const validation = validateTelegramInitData(initData, botToken);
+
+  if (!validation.isValid) {
+    return NextResponse.json({ error: validation.error }, { status: 401 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    user: validation.data?.user,
+    authDate: validation.data?.auth_date,
+  });
+}
+
+// 3. 前端 Hook 使用
+import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+
+function MyComponent() {
+  const { isAuthenticated, user, error, authenticate } = useTelegramAuth();
+
+  if (isAuthenticated) {
+    return <div>欢迎, {user?.first_name}!</div>;
+  }
+
+  return <div>认证失败: {error}</div>;
+}
+```
+
+#### 安全特性
+
+- **HMAC-SHA256 验证**: 使用 Telegram Bot Token 验证数据完整性
+- **时间戳检查**: 防止重放攻击，默认 24 小时有效期
+- **数据解析验证**: 严格验证 InitData 格式和内容
+- **错误处理**: 详细的错误信息便于调试和安全监控
+
+#### 开发测试
+
+访问 `/test` 页面可以在开发环境中测试认证功能：
+
+```bash
+# 启动开发服务器
+npm run dev
+
+# 访问测试页面
+http://localhost:3000/test
+```
+
 ### 用户认证安全
 
 ```typescript
-// Telegram InitData 验证
-import { verifyInitData } from "@/lib/telegram-auth";
-
-export async function validateTelegramUser(initData: string) {
-  const isValid = verifyInitData(initData, process.env.TELEGRAM_BOT_TOKEN!);
-  if (!isValid) {
-    throw new Error("Invalid Telegram authentication");
+// 认证中间件示例
+export async function authMiddleware(request: NextRequest) {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response("Unauthorized", { status: 401 });
   }
-  return parseInitData(initData);
+
+  const initData = authHeader.replace("Bearer ", "");
+  const validation = validateTelegramInitData(
+    initData,
+    process.env.TELEGRAM_BOT_TOKEN!
+  );
+
+  if (!validation.isValid) {
+    return new Response("Invalid authentication", { status: 401 });
+  }
+
+  // 继续处理请求
+  return NextResponse.next();
 }
 ```
 
 ### 数据安全
 
 - **匿名化处理**: 所有漂流瓶内容与用户身份完全分离
+- **InitData 验证**: 确保请求来自真实的 Telegram 用户
 - **内容审核**: 实现基础的内容过滤和举报机制
 - **速率限制**: 防止恶意刷屏和垃圾信息
 - **数据加密**: 敏感数据在数据库中加密存储
