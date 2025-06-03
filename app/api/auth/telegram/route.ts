@@ -22,7 +22,12 @@ export async function POST(request: NextRequest) {
     const validation = validateTelegramInitData(initData, botToken);
 
     if (!validation.isValid) {
-      return NextResponse.json({ error: validation.error }, { status: 401 });
+      // 在开发环境中返回调试信息
+      const response: any = { error: validation.error };
+      if (process.env.NODE_ENV === "development" && validation.debug) {
+        response.debug = validation.debug;
+      }
+      return NextResponse.json(response, { status: 401 });
     }
 
     // 验证成功，返回用户信息

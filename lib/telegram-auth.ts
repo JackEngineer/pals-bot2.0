@@ -30,7 +30,7 @@ export interface TelegramInitData {
 export function validateTelegramInitData(
   initData: string,
   botToken: string
-): { isValid: boolean; data?: TelegramInitData; error?: string } {
+): { isValid: boolean; data?: TelegramInitData; error?: string; debug?: any } {
   try {
     if (!initData || !botToken) {
       return { isValid: false, error: "缺少必要参数" };
@@ -40,7 +40,8 @@ export function validateTelegramInitData(
     const urlParams = new URLSearchParams(initData);
     const data: Record<string, any> = {};
 
-    for (const [key, value] of urlParams.entries()) {
+    // 使用 Array.from 来兼容不同环境
+    Array.from(urlParams.entries()).forEach(([key, value]) => {
       if (key === "user") {
         try {
           data[key] = JSON.parse(value);
@@ -50,7 +51,7 @@ export function validateTelegramInitData(
       } else {
         data[key] = value;
       }
-    }
+    });
 
     // 提取 hash
     const hash = data.hash;
@@ -71,8 +72,9 @@ export function validateTelegramInitData(
       })
       .join("\n");
 
-    // 计算 secret key
-    const secretKey = CryptoJS.HmacSHA256(botToken, "WebAppData");
+    // 根据 Telegram 官方文档正确计算 secret key
+    // 首先创建 "WebAppData" 的 SHA256 hash
+    const secretKey = CryptoJS.HmacSHA256("WebAppData", botToken);
 
     // 计算期望的 hash
     const expectedHash = CryptoJS.HmacSHA256(
@@ -80,11 +82,25 @@ export function validateTelegramInitData(
       secretKey
     ).toString();
 
+    // 调试信息
+    const debugInfo = {
+      originalInitData: initData,
+      parsedData: data,
+      dataCheckString,
+      receivedHash: hash,
+      expectedHash,
+      botTokenLength: botToken.length,
+    };
+
     // 验证 hash
     const isValid = hash === expectedHash;
 
     if (!isValid) {
-      return { isValid: false, error: "Hash验证失败" };
+      return {
+        isValid: false,
+        error: "Hash验证失败",
+        debug: debugInfo,
+      };
     }
 
     // 检查时间戳（可选，防止重放攻击）
@@ -147,7 +163,7 @@ export function parseInitData(initData: string): TelegramInitData | null {
     const urlParams = new URLSearchParams(initData);
     const data: Record<string, any> = {};
 
-    for (const [key, value] of urlParams.entries()) {
+    Array.from(urlParams.entries()).forEach(([key, value]) => {
       if (key === "user") {
         try {
           data[key] = JSON.parse(value);
@@ -159,7 +175,7 @@ export function parseInitData(initData: string): TelegramInitData | null {
       } else {
         data[key] = value;
       }
-    }
+    });
 
     return data as TelegramInitData;
   } catch {
