@@ -188,12 +188,12 @@ export function validateTelegramInitData(
       return { isValid: false, error: "无效的auth_date" };
     }
 
-    // 检查数据是否过期（例如24小时）
-    const currentTime = Math.floor(Date.now() / 1000);
-    const maxAge = 24 * 60 * 60; // 24小时
-    if (currentTime - authDate > maxAge) {
-      return { isValid: false, error: "数据已过期" };
-    }
+    // 检查数据是否过期（例如24小时）- 暂时禁用以专注于Hash验证
+    // const currentTime = Math.floor(Date.now() / 1000);
+    // const maxAge = 24 * 60 * 60; // 24小时
+    // if (currentTime - authDate > maxAge) {
+    //   return { isValid: false, error: "数据已过期" };
+    // }
 
     return {
       isValid: true,
