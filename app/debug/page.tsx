@@ -11,6 +11,7 @@ export default function DebugPage() {
   const [parsedInitData, setParsedInitData] = useState<any>(null);
   const [manualTestResult, setManualTestResult] = useState<any>(null);
   const [envCheck, setEnvCheck] = useState<any>(null);
+  const [apiTestResult, setApiTestResult] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -44,6 +45,42 @@ export default function DebugPage() {
       }
     } catch (error) {
       console.log("无法检查环境变量：", error);
+    }
+  };
+
+  const testApiDirect = async () => {
+    setApiTestResult({ loading: true });
+
+    try {
+      const initData = initDataRaw || "test_init_data";
+
+      const response = await fetch("/api/auth/telegram", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ initData }),
+      });
+
+      const result = await response.json();
+
+      setApiTestResult({
+        loading: false,
+        status: response.status,
+        statusText: response.statusText,
+        success: response.ok,
+        data: result,
+        timestamp: new Date().toISOString(),
+        requestData: { initData },
+      });
+    } catch (error) {
+      setApiTestResult({
+        loading: false,
+        status: 0,
+        success: false,
+        error: error instanceof Error ? error.message : "未知错误",
+        timestamp: new Date().toISOString(),
+      });
     }
   };
 
@@ -98,6 +135,59 @@ export default function DebugPage() {
           >
             关闭
           </button>
+        </div>
+
+        {/* API 直接测试 */}
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-red-800">🚨 API 直接测试</h2>
+            <button
+              onClick={testApiDirect}
+              disabled={apiTestResult?.loading}
+              className="text-sm bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 py-1 rounded transition-colors"
+            >
+              {apiTestResult?.loading ? "测试中..." : "测试 API"}
+            </button>
+          </div>
+
+          {apiTestResult && (
+            <div className="text-sm space-y-2">
+              <div className="flex items-center space-x-2">
+                <span className="font-medium">状态码:</span>
+                <span
+                  className={
+                    apiTestResult.status === 401
+                      ? "text-red-600 font-bold"
+                      : apiTestResult.status === 200
+                      ? "text-green-600"
+                      : "text-orange-600"
+                  }
+                >
+                  {apiTestResult.status} {apiTestResult.statusText}
+                </span>
+              </div>
+
+              {apiTestResult.status === 401 && (
+                <div className="p-3 bg-red-100 rounded border">
+                  <div className="font-medium text-red-800 mb-2">
+                    ❌ 401 错误详情:
+                  </div>
+                  <pre className="text-xs text-red-700 whitespace-pre-wrap">
+                    {JSON.stringify(apiTestResult.data, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              <details className="text-xs">
+                <summary className="cursor-pointer hover:text-red-700">
+                  查看完整响应
+                </summary>
+                <pre className="mt-2 p-2 bg-red-100 rounded text-red-700 whitespace-pre-wrap">
+                  {JSON.stringify(apiTestResult, null, 2)}
+                </pre>
+              </details>
+            </div>
+          )}
         </div>
 
         {/* 环境变量检查 */}
@@ -199,131 +289,150 @@ export default function DebugPage() {
                 <textarea
                   value={initDataRaw}
                   readOnly
-                  className="w-full h-24 p-3 bg-gray-50 border rounded text-xs font-mono"
+                  className="w-full h-32 p-2 border rounded text-sm font-mono"
                 />
-                {parsedInitData && (
-                  <div>
-                    <div className="flex items-center space-x-4 text-sm">
-                      <span>用户ID: {parsedInitData.user?.id}</span>
-                      {parsedInitData.auth_date && (
-                        <span>
-                          时间: {getTimeAgo(parsedInitData.auth_date)}
-                        </span>
-                      )}
-                    </div>
-                    <pre className="mt-2 p-3 bg-gray-50 rounded border text-xs">
-                      {JSON.stringify(parsedInitData, null, 2)}
-                    </pre>
-                  </div>
-                )}
+                <div className="text-xs text-gray-500">
+                  包含 hash: {initDataRaw.includes("hash=") ? "✅" : "❌"}
+                </div>
               </div>
             ) : (
-              <p className="text-gray-500">无 InitData 数据</p>
+              <div className="space-y-2">
+                <p className="text-red-500">❌ 无原始 InitData</p>
+                <p className="text-xs text-gray-500">
+                  可能原因：不在 Telegram 环境中，或 WebApp SDK 未正确加载
+                </p>
+              </div>
             )}
           </div>
         </div>
 
-        {/* 手动测试 */}
+        {/* 解析后的数据 */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">🧪 手动认证测试</h2>
-          <button
-            onClick={testManualAuth}
-            disabled={!initDataRaw}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg transition-colors mb-4"
-          >
-            测试服务器认证
-          </button>
-
-          {manualTestResult && (
+          <h2 className="text-lg font-semibold mb-4">🔍 解析后的 InitData</h2>
+          {parsedInitData ? (
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <span className="font-medium">状态码:</span>
-                <span
-                  className={`px-2 py-1 rounded text-sm ${
-                    manualTestResult.success
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {manualTestResult.status}
-                </span>
-              </div>
-
-              <div>
-                <span className="font-medium">服务器响应:</span>
-                <pre className="mt-1 p-3 bg-gray-50 rounded border text-sm overflow-auto">
-                  {JSON.stringify(manualTestResult.data, null, 2)}
-                </pre>
-              </div>
-
-              {/* Hash验证分析 */}
-              {manualTestResult.data?.debug && (
-                <div className="bg-red-50 border border-red-200 rounded p-4">
-                  <h3 className="font-medium text-red-800 mb-2">
-                    🔍 Hash验证分析
-                  </h3>
-                  <div className="text-sm space-y-2">
-                    <div>
-                      <strong>接收到的Hash:</strong>
-                      <code className="ml-2 bg-red-100 px-1 rounded font-mono text-xs">
-                        {manualTestResult.data.debug.receivedHash}
-                      </code>
-                    </div>
-                    <div>
-                      <strong>期望的Hash:</strong>
-                      <code className="ml-2 bg-green-100 px-1 rounded font-mono text-xs">
-                        {manualTestResult.data.debug.expectedHash}
-                      </code>
-                    </div>
-                    <div>
-                      <strong>数据检查字符串:</strong>
-                      <pre className="mt-1 p-2 bg-gray-100 rounded text-xs font-mono">
-                        {manualTestResult.data.debug.dataCheckString}
-                      </pre>
-                    </div>
-                    <div>
-                      <strong>Bot Token长度:</strong>
-                      <span className="ml-2">
-                        {manualTestResult.data.debug.botTokenLength} 字符
-                      </span>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">用户ID:</span>
+                  <span className="ml-2">
+                    {parsedInitData.user?.id || "N/A"}
+                  </span>
                 </div>
-              )}
+                <div>
+                  <span className="font-medium">认证时间:</span>
+                  <span className="ml-2">
+                    {parsedInitData.auth_date
+                      ? `${getTimeAgo(parsedInitData.auth_date)} (${new Date(
+                          parsedInitData.auth_date * 1000
+                        ).toISOString()})`
+                      : "N/A"}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">包含 Hash:</span>
+                  <span
+                    className={`ml-2 ${
+                      parsedInitData.hash ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {parsedInitData.hash ? "✅ 是" : "❌ 否"}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium">Query ID:</span>
+                  <span className="ml-2">
+                    {parsedInitData.query_id || "N/A"}
+                  </span>
+                </div>
+              </div>
+              <details className="text-sm">
+                <summary className="cursor-pointer hover:text-blue-600 font-medium">
+                  查看完整解析数据
+                </summary>
+                <pre className="mt-2 p-3 bg-gray-50 rounded border text-xs">
+                  {JSON.stringify(parsedInitData, null, 2)}
+                </pre>
+              </details>
             </div>
+          ) : (
+            <p className="text-gray-500">无法解析 InitData</p>
           )}
         </div>
 
-        {/* 问题分析 */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">📊 问题分析</h2>
-          <div className="space-y-3 text-sm">
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <strong>❗ 当前问题:</strong> Hash验证失败
+        {/* 手动测试 */}
+        {initDataRaw && (
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">🧪 手动认证测试</h2>
+              <button
+                onClick={testManualAuth}
+                className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors"
+              >
+                测试认证
+              </button>
             </div>
 
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-              <strong>🔍 可能原因:</strong>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Bot Token 不正确或格式错误</li>
+            {manualTestResult && (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium">状态:</span>
+                  <span
+                    className={
+                      manualTestResult.success
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }
+                  >
+                    {manualTestResult.status} -{" "}
+                    {manualTestResult.success ? "成功" : "失败"}
+                  </span>
+                </div>
+                <pre className="p-3 bg-gray-50 rounded border text-sm">
+                  {JSON.stringify(manualTestResult.data, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 故障排除指南 */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-yellow-800 mb-4">
+            🛠️ 401 错误故障排除指南
+          </h2>
+          <div className="space-y-4 text-sm text-yellow-700">
+            <div>
+              <h3 className="font-semibold mb-2">常见原因：</h3>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>InitData 中缺少 hash 参数</li>
+                <li>Bot Token 配置错误或不匹配</li>
+                <li>InitData 已过期（超过24小时）</li>
+                <li>不在 Telegram Mini App 环境中运行</li>
                 <li>InitData 在传输过程中被修改</li>
-                <li>时间戳不同步（服务器时间与Telegram时间差异）</li>
-                <li>URL编码/解码问题</li>
-                <li>开发环境模拟数据与实际Telegram数据格式不符</li>
-                <li>HMAC-SHA256 计算算法实现差异</li>
               </ul>
             </div>
 
-            <div className="p-3 bg-green-50 border border-green-200 rounded">
-              <strong>🛠️ 排查步骤:</strong>
-              <ol className="list-decimal list-inside mt-2 space-y-1">
-                <li>确认您的Bot Token是否正确（在BotFather中查看）</li>
-                <li>确保在真实的Telegram环境中测试（不是浏览器直接访问）</li>
-                <li>检查InitData是否完整且未被修改</li>
-                <li>对比上面的"接收到的Hash"和"期望的Hash"</li>
-                <li>如果是开发环境，尝试使用真实的Telegram Mini App测试</li>
+            <div>
+              <h3 className="font-semibold mb-2">解决步骤：</h3>
+              <ol className="list-decimal list-inside space-y-1 ml-4">
+                <li>确认应用在 Telegram 中正确启动</li>
+                <li>检查 .env.local 中的 TELEGRAM_BOT_TOKEN</li>
+                <li>点击上方"测试 API"按钮查看详细错误</li>
+                <li>如果缺少 InitData，尝试重新启动 Mini App</li>
+                <li>在开发环境中，可以使用 initDataUnsafe 进行测试</li>
               </ol>
             </div>
+
+            {!initDataRaw && (
+              <div className="p-3 bg-yellow-100 border border-yellow-300 rounded">
+                <strong>⚠️ 当前问题：</strong> 未检测到 InitData。
+                <br />
+                <span className="text-xs">
+                  这通常表示应用不在 Telegram Mini App 环境中运行。 请通过
+                  Telegram Bot 启动应用，或在开发环境中使用模拟数据。
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
