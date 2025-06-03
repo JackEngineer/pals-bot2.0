@@ -115,12 +115,15 @@ export function validateTelegramInitData(
     // 移除 hash 参数
     delete data.hash;
 
-    // 按键名排序并构建检查字符串
+    // 按键名排序并构建检查字符串 - 严格按照Telegram文档
     const dataCheckString = Object.keys(data)
       .sort()
       .map((key) => {
-        const value =
-          typeof data[key] === "object" ? JSON.stringify(data[key]) : data[key];
+        let value = data[key];
+        // 对于对象类型，需要JSON stringify但不添加空格
+        if (typeof value === "object") {
+          value = JSON.stringify(value);
+        }
         return `${key}=${value}`;
       })
       .join("\n");
@@ -128,23 +131,40 @@ export function validateTelegramInitData(
     // 根据 Telegram 官方文档：
     // 1. secret_key = HMAC-SHA256(bot_token, "WebAppData")
     // 2. hash = HMAC-SHA256(data_check_string, secret_key)
+
+    // 步骤1：生成secret key
     const secretKey = CryptoJS.HmacSHA256(botToken, "WebAppData");
 
-    // 计算期望的 hash
+    // 步骤2：计算期望的 hash
     const expectedHash = CryptoJS.HmacSHA256(
       dataCheckString,
       secretKey
-    ).toString();
+    ).toString(CryptoJS.enc.Hex);
 
-    // 调试信息
+    // 详细调试信息
     const debugInfo = {
-      originalInitData: initData,
-      parsedData: data,
-      dataCheckString,
-      receivedHash: hash,
-      expectedHash,
-      botTokenLength: botToken.length,
-      secretKeyHex: secretKey.toString(), // 添加这个用于调试
+      step1_originalInitData: initData,
+      step2_parsedData: data,
+      step3_dataCheckString: dataCheckString,
+      step4_dataCheckStringBytes: Array.from(
+        new TextEncoder().encode(dataCheckString)
+      ),
+      step5_botToken: `${botToken.substring(0, 15)}...`,
+      step6_secretKey: secretKey.toString(CryptoJS.enc.Hex),
+      step7_expectedHash: expectedHash,
+      step8_receivedHash: hash,
+      step9_comparison: {
+        receivedHash: hash,
+        expectedHash: expectedHash,
+        receivedLength: hash.length,
+        expectedLength: expectedHash.length,
+        areEqual: hash === expectedHash,
+        receivedLowerCase: hash.toLowerCase(),
+        expectedLowerCase: expectedHash.toLowerCase(),
+        caseInsensitiveMatch: hash.toLowerCase() === expectedHash.toLowerCase(),
+      },
+      rawInitDataLength: initData.length,
+      parsedKeysCount: Object.keys(data).length,
     };
 
     // 验证 hash
