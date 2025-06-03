@@ -32,8 +32,61 @@ export function validateTelegramInitData(
   botToken: string
 ): { isValid: boolean; data?: TelegramInitData; error?: string; debug?: any } {
   try {
-    if (!initData || !botToken) {
-      return { isValid: false, error: "缺少必要参数" };
+    if (!initData) {
+      return { isValid: false, error: "缺少InitData参数" };
+    }
+
+    // 开发环境下的特殊处理
+    if (!botToken && process.env.NODE_ENV === "development") {
+      console.warn("⚠️ 开发环境：Bot Token未配置，使用简化认证模式");
+
+      // 解析 InitData 但跳过签名验证
+      const urlParams = new URLSearchParams(initData);
+      const data: Record<string, any> = {};
+
+      Array.from(urlParams.entries()).forEach(([key, value]) => {
+        if (key === "user") {
+          try {
+            data[key] = JSON.parse(value);
+          } catch {
+            data[key] = value;
+          }
+        } else {
+          data[key] = value;
+        }
+      });
+
+      // 如果没有用户数据，尝试从 initDataUnsafe 获取
+      if (!data.user && typeof window !== "undefined") {
+        const unsafeUser = (window as any).Telegram?.WebApp?.initDataUnsafe
+          ?.user;
+        if (unsafeUser) {
+          data.user = unsafeUser;
+          data.auth_date = Math.floor(Date.now() / 1000);
+          data.hash = "dev_mode";
+        }
+      }
+
+      if (data.user) {
+        return {
+          isValid: true,
+          data: data as TelegramInitData,
+          debug: {
+            mode: "开发环境简化认证",
+            warning: "请配置正确的 TELEGRAM_BOT_TOKEN 以启用完整验证",
+          },
+        };
+      }
+    }
+
+    if (!botToken) {
+      return {
+        isValid: false,
+        error: "缺少Bot Token - 请在 .env.local 文件中配置 TELEGRAM_BOT_TOKEN",
+        debug: {
+          hint: "创建 .env.local 文件并添加: TELEGRAM_BOT_TOKEN=your_bot_token",
+        },
+      };
     }
 
     // 解析 URL 编码的数据
