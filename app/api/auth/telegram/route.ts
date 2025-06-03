@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
         authFailed: true,
       };
 
-      // 在开发环境中返回调试信息
-      if (process.env.NODE_ENV === "development" && validation.debug) {
+      // 在验证失败时总是返回调试信息以便排查问题
+      if (validation.debug) {
         response.debug = validation.debug;
         response.troubleshooting = {
           possibleCauses: [
