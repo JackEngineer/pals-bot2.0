@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import TelegramAuth from "@/components/TelegramAuth";
+import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 
 // 声明 Telegram WebApp 类型
 declare global {
@@ -30,7 +31,9 @@ declare global {
 }
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null);
+  // 使用经过验证的认证信息
+  const { isAuthenticated, user: authenticatedUser } = useTelegramAuth();
+
   const [bottles, setBottles] = useState<string[]>([
     "今天天气真好，希望你也是 🌞",
     "一个人的时候，特别想念有人陪伴的感觉",
@@ -47,11 +50,6 @@ export default function Home() {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
-
-      // 设置用户信息
-      if (tg.initDataUnsafe?.user) {
-        setUser(tg.initDataUnsafe.user);
-      }
 
       // 配置主按钮
       tg.MainButton.setText("投递漂流瓶");
@@ -101,8 +99,11 @@ export default function Home() {
           <h1 className="text-2xl font-bold text-blue-800 mb-4">
             🍃 漂流瓶 🍃
           </h1>
-          {user && (
-            <p className="text-blue-600 mb-4">欢迎, {user.first_name}!</p>
+          {/* 只在认证成功时显示用户信息 */}
+          {isAuthenticated && authenticatedUser && (
+            <p className="text-blue-600 mb-4">
+              欢迎, {authenticatedUser.first_name}!
+            </p>
           )}
 
           {/* Telegram 认证状态 */}
