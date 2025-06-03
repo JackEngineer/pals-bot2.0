@@ -7,8 +7,9 @@ const nextConfig = {
         source: '/(.*)',
         headers: [
           {
-            key: 'X-Frame-Options',
-            value: 'DENY',
+            // 允许 Telegram 嵌入应用 - 移除 X-Frame-Options: DENY
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
           },
         ],
       },

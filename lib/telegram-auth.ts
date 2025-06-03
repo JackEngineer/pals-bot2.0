@@ -36,222 +36,157 @@ export function validateTelegramInitData(
       return { isValid: false, error: "缺少InitData参数" };
     }
 
-    // 开发环境下的特殊处理
-    if (!botToken && process.env.NODE_ENV === "development") {
-      console.warn("⚠️ 开发环境：Bot Token未配置，使用简化认证模式");
-
-      // 解析 InitData 但跳过签名验证
-      const urlParams = new URLSearchParams(initData);
-      const data: Record<string, any> = {};
-
-      Array.from(urlParams.entries()).forEach(([key, value]) => {
-        if (key === "user") {
-          try {
-            data[key] = JSON.parse(value);
-          } catch {
-            data[key] = value;
-          }
-        } else {
-          data[key] = value;
-        }
-      });
-
-      // 如果没有用户数据，尝试从 initDataUnsafe 获取
-      if (!data.user && typeof window !== "undefined") {
-        const unsafeUser = (window as any).Telegram?.WebApp?.initDataUnsafe
-          ?.user;
-        if (unsafeUser) {
-          data.user = unsafeUser;
-          data.auth_date = Math.floor(Date.now() / 1000);
-          data.hash = "dev_mode";
-        }
-      }
-
-      if (data.user) {
-        return {
-          isValid: true,
-          data: data as TelegramInitData,
-          debug: {
-            mode: "开发环境简化认证",
-            warning: "请配置正确的 TELEGRAM_BOT_TOKEN 以启用完整验证",
-          },
-        };
-      }
-    }
-
     if (!botToken) {
       return {
         isValid: false,
-        error: "缺少Bot Token - 请在 .env.local 文件中配置 TELEGRAM_BOT_TOKEN",
+        error: "缺少Bot Token - 请在环境变量中配置 TELEGRAM_BOT_TOKEN",
         debug: {
-          hint: "创建 .env.local 文件并添加: TELEGRAM_BOT_TOKEN=your_bot_token",
+          hint: "请在Vercel中设置环境变量 TELEGRAM_BOT_TOKEN",
+          envExample: "TELEGRAM_BOT_TOKEN=your_bot_token_here",
         },
       };
     }
+
+    console.log("🔍 开始验证 InitData:", {
+      initDataLength: initData.length,
+      botTokenPrefix: botToken.substring(0, 15) + "...",
+    });
 
     // 解析 URL 编码的数据
     const urlParams = new URLSearchParams(initData);
     const data: Record<string, any> = {};
 
-    // 使用 Array.from 来兼容不同环境，并保留原始字符串值
-    Array.from(urlParams.entries()).forEach(([key, value]) => {
+    // 收集所有参数
+    for (const [key, value] of urlParams.entries()) {
       if (key === "user") {
-        // 对于user字段，保留原始解码后的字符串，不要重新JSON.stringify
-        data[key] = value; // 直接使用原始值
+        // 解析用户数据
+        try {
+          data[key] = JSON.parse(value);
+        } catch (e) {
+          console.error("❌ 解析用户数据失败:", e);
+          return { isValid: false, error: "用户数据格式错误" };
+        }
       } else {
         data[key] = value;
       }
-    });
+    }
 
-    // 提取 hash
-    const hash = data.hash;
-    if (!hash) {
+    // 提取并验证 hash
+    const receivedHash = data.hash;
+    if (!receivedHash) {
       return { isValid: false, error: "缺少hash参数" };
     }
 
-    // 移除 hash 参数和其他不参与验证的字段
+    // 移除 hash 参数
     delete data.hash;
-    // 如果存在 signature 字段，也要移除（这不是标准的Telegram字段）
-    if (data.signature) {
-      delete data.signature;
-    }
 
-    // 按键名排序并构建检查字符串 - 严格按照Telegram文档
+    // 按字母顺序排序参数并构建数据检查字符串
     const dataCheckString = Object.keys(data)
       .sort()
-      .map((key) => {
-        let value = data[key];
-        // 不要对任何值进行JSON.stringify，直接使用原始字符串
-        return `${key}=${value}`;
-      })
+      .map((key) => `${key}=${data[key]}`)
       .join("\n");
 
-    // 根据 Telegram 官方文档：
-    // 1. secret_key = HMAC-SHA256(bot_token, "WebAppData")
-    // 2. hash = HMAC-SHA256(data_check_string, secret_key)
+    console.log("🔧 数据检查字符串:", dataCheckString);
 
-    // 步骤1：生成secret key
+    // 按照 Telegram 官方文档计算 hash
+    // 1. secret_key = HMAC-SHA256(bot_token, "WebAppData")
     const secretKey = CryptoJS.HmacSHA256(botToken, "WebAppData");
 
-    // 步骤2：计算期望的 hash
+    // 2. hash = HMAC-SHA256(data_check_string, secret_key)
     const expectedHash = CryptoJS.HmacSHA256(
       dataCheckString,
       secretKey
     ).toString(CryptoJS.enc.Hex);
 
-    // 详细调试信息
-    const debugInfo = {
-      step1_originalInitData: initData,
-      step2_parsedData: data,
-      step3_dataCheckString: dataCheckString,
-      step4_dataCheckStringBytes: Array.from(
-        new TextEncoder().encode(dataCheckString)
-      ),
-      step5_botToken: `${botToken.substring(0, 15)}...`,
-      step6_secretKey: secretKey.toString(CryptoJS.enc.Hex),
-      step7_expectedHash: expectedHash,
-      step8_receivedHash: hash,
-      step9_comparison: {
-        receivedHash: hash,
-        expectedHash: expectedHash,
-        receivedLength: hash.length,
-        expectedLength: expectedHash.length,
-        areEqual: hash === expectedHash,
-        receivedLowerCase: hash.toLowerCase(),
-        expectedLowerCase: expectedHash.toLowerCase(),
-        caseInsensitiveMatch: hash.toLowerCase() === expectedHash.toLowerCase(),
-      },
-      rawInitDataLength: initData.length,
-      parsedKeysCount: Object.keys(data).length,
-    };
+    console.log("🔑 Hash比较:", {
+      received: receivedHash,
+      expected: expectedHash,
+      match: receivedHash === expectedHash,
+    });
 
     // 验证 hash
-    const isValid = hash === expectedHash;
-
-    if (!isValid) {
+    if (receivedHash !== expectedHash) {
       return {
         isValid: false,
         error: "Hash验证失败",
-        debug: debugInfo,
+        debug: {
+          receivedHash,
+          expectedHash,
+          dataCheckString,
+          suggestion: "请检查Bot Token是否正确，或尝试重新打开应用",
+        },
       };
     }
 
-    // 检查时间戳（可选，防止重放攻击）
+    // 验证时间戳
     const authDate = parseInt(data.auth_date);
     if (isNaN(authDate)) {
       return { isValid: false, error: "无效的auth_date" };
     }
 
-    // 检查数据是否过期（例如24小时）- 暂时禁用以专注于Hash验证
-    // const currentTime = Math.floor(Date.now() / 1000);
-    // const maxAge = 24 * 60 * 60; // 24小时
-    // if (currentTime - authDate > maxAge) {
-    //   return { isValid: false, error: "数据已过期" };
-    // }
+    console.log("✅ InitData验证成功");
 
     return {
       isValid: true,
       data: {
         ...data,
-        hash,
+        hash: receivedHash,
         auth_date: authDate,
       } as TelegramInitData,
     };
   } catch (error) {
+    console.error("❌ 验证过程中发生错误:", error);
     return {
       isValid: false,
-      error: `验证过程中发生错误: ${
-        error instanceof Error ? error.message : "未知错误"
-      }`,
+      error:
+        "验证过程中发生错误: " +
+        (error instanceof Error ? error.message : "未知错误"),
     };
   }
 }
 
 /**
- * 从 Telegram WebApp 获取 InitData
- * @returns InitData 字符串或 null
+ * 获取 Telegram InitData
  */
 export function getTelegramInitData(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
 
-  // 尝试从 Telegram WebApp SDK 获取
-  if ((window as any).Telegram?.WebApp?.initData) {
-    return (window as any).Telegram.WebApp.initData;
-  }
-
-  // 尝试从 URL 参数获取（开发环境）
+  // 优先从 URL 参数获取
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get("initData");
+  const initDataFromUrl = urlParams.get("tgWebAppData");
+  if (initDataFromUrl) {
+    return decodeURIComponent(initDataFromUrl);
+  }
+
+  // 从 Telegram WebApp API 获取
+  if (window.Telegram?.WebApp?.initData) {
+    return window.Telegram.WebApp.initData;
+  }
+
+  return null;
 }
 
 /**
- * 解析 InitData 字符串为对象
- * @param initData - InitData 字符串
- * @returns 解析后的对象
+ * 解析 InitData 字符串
  */
 export function parseInitData(initData: string): TelegramInitData | null {
   try {
     const urlParams = new URLSearchParams(initData);
-    const data: Record<string, any> = {};
+    const result: any = {};
 
-    Array.from(urlParams.entries()).forEach(([key, value]) => {
+    for (const [key, value] of urlParams.entries()) {
       if (key === "user") {
-        try {
-          data[key] = JSON.parse(value);
-        } catch {
-          data[key] = value;
-        }
+        result[key] = JSON.parse(value);
       } else if (key === "auth_date") {
-        data[key] = parseInt(value);
+        result[key] = parseInt(value);
       } else {
-        data[key] = value;
+        result[key] = value;
       }
-    });
+    }
 
-    return data as TelegramInitData;
-  } catch {
+    return result as TelegramInitData;
+  } catch (error) {
+    console.error("解析 InitData 失败:", error);
     return null;
   }
 }
