@@ -112,8 +112,12 @@ export function validateTelegramInitData(
       return { isValid: false, error: "缺少hash参数" };
     }
 
-    // 移除 hash 参数
+    // 移除 hash 参数和其他不参与验证的字段
     delete data.hash;
+    // 如果存在 signature 字段，也要移除（这不是标准的Telegram字段）
+    if (data.signature) {
+      delete data.signature;
+    }
 
     // 按键名排序并构建检查字符串 - 严格按照Telegram文档
     const dataCheckString = Object.keys(data)
