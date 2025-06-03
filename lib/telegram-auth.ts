@@ -93,14 +93,11 @@ export function validateTelegramInitData(
     const urlParams = new URLSearchParams(initData);
     const data: Record<string, any> = {};
 
-    // 使用 Array.from 来兼容不同环境
+    // 使用 Array.from 来兼容不同环境，并保留原始字符串值
     Array.from(urlParams.entries()).forEach(([key, value]) => {
       if (key === "user") {
-        try {
-          data[key] = JSON.parse(value);
-        } catch {
-          data[key] = value;
-        }
+        // 对于user字段，保留原始解码后的字符串，不要重新JSON.stringify
+        data[key] = value; // 直接使用原始值
       } else {
         data[key] = value;
       }
@@ -124,10 +121,7 @@ export function validateTelegramInitData(
       .sort()
       .map((key) => {
         let value = data[key];
-        // 对于对象类型，需要JSON stringify但不添加空格
-        if (typeof value === "object") {
-          value = JSON.stringify(value);
-        }
+        // 不要对任何值进行JSON.stringify，直接使用原始字符串
         return `${key}=${value}`;
       })
       .join("\n");
