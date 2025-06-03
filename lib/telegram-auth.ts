@@ -72,9 +72,10 @@ export function validateTelegramInitData(
       })
       .join("\n");
 
-    // 根据 Telegram 官方文档正确计算 secret key
-    // 首先创建 "WebAppData" 的 SHA256 hash
-    const secretKey = CryptoJS.HmacSHA256("WebAppData", botToken);
+    // 根据 Telegram 官方文档：
+    // 1. secret_key = HMAC-SHA256(bot_token, "WebAppData")
+    // 2. hash = HMAC-SHA256(data_check_string, secret_key)
+    const secretKey = CryptoJS.HmacSHA256(botToken, "WebAppData");
 
     // 计算期望的 hash
     const expectedHash = CryptoJS.HmacSHA256(
@@ -90,6 +91,7 @@ export function validateTelegramInitData(
       receivedHash: hash,
       expectedHash,
       botTokenLength: botToken.length,
+      secretKeyHex: secretKey.toString(), // 添加这个用于调试
     };
 
     // 验证 hash
