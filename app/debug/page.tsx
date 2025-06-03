@@ -12,6 +12,7 @@ export default function DebugPage() {
   const [manualTestResult, setManualTestResult] = useState<any>(null);
   const [envCheck, setEnvCheck] = useState<any>(null);
   const [apiTestResult, setApiTestResult] = useState<any>(null);
+  const [botValidation, setBotValidation] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -45,6 +46,28 @@ export default function DebugPage() {
       }
     } catch (error) {
       console.log("无法检查环境变量：", error);
+    }
+  };
+
+  const validateBot = async () => {
+    setBotValidation({ loading: true });
+
+    try {
+      const response = await fetch("/api/validate-bot", {
+        method: "GET",
+      });
+
+      const result = await response.json();
+      setBotValidation({
+        loading: false,
+        ...result,
+      });
+    } catch (error) {
+      setBotValidation({
+        loading: false,
+        valid: false,
+        error: "网络错误: " + error,
+      });
     }
   };
 
@@ -175,6 +198,73 @@ export default function DebugPage() {
                   <pre className="text-xs text-red-700 whitespace-pre-wrap">
                     {JSON.stringify(apiTestResult.data, null, 2)}
                   </pre>
+
+                  {/* Hash 验证分析 */}
+                  {apiTestResult.data?.debug && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded">
+                      <h4 className="font-medium text-red-800 mb-3">
+                        🔍 Hash 验证详细分析
+                      </h4>
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <span className="font-medium text-red-700">
+                            接收到的 Hash:
+                          </span>
+                          <div className="mt-1 p-2 bg-white rounded border font-mono text-red-600 break-all">
+                            {apiTestResult.data.debug.receivedHash}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="font-medium text-red-700">
+                            期望的 Hash:
+                          </span>
+                          <div className="mt-1 p-2 bg-white rounded border font-mono text-green-600 break-all">
+                            {apiTestResult.data.debug.expectedHash}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="font-medium text-red-700">
+                            数据检查字符串:
+                          </span>
+                          <textarea
+                            readOnly
+                            value={apiTestResult.data.debug.dataCheckString}
+                            className="mt-1 w-full h-24 p-2 bg-white rounded border font-mono text-xs"
+                          />
+                        </div>
+
+                        <div className="flex items-center space-x-4">
+                          <span className="font-medium text-red-700">
+                            Bot Token 长度:
+                          </span>
+                          <span className="text-red-600">
+                            {apiTestResult.data.debug.botTokenLength} 字符
+                          </span>
+                        </div>
+
+                        <div className="bg-yellow-50 border border-yellow-300 rounded p-3">
+                          <h5 className="font-medium text-yellow-800 mb-2">
+                            💡 可能的解决方案:
+                          </h5>
+                          <ol className="list-decimal list-inside space-y-1 text-yellow-700">
+                            <li>
+                              确认 Bot Token 是否正确（与 BotFather
+                              中的完全一致）
+                            </li>
+                            <li>检查 InitData 是否被 URL 编码/解码影响</li>
+                            <li>
+                              确认当前 Bot Token 与生成 InitData 的 Bot 是同一个
+                            </li>
+                            <li>
+                              在 Telegram 中重新启动 Mini App 获取新的 InitData
+                            </li>
+                          </ol>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -216,6 +306,67 @@ export default function DebugPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Bot Token 验证 */}
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-purple-800">🤖 Bot Token 验证</h2>
+            <button
+              onClick={validateBot}
+              disabled={botValidation?.loading}
+              className="text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white px-3 py-1 rounded transition-colors"
+            >
+              {botValidation?.loading ? "验证中..." : "验证 Bot"}
+            </button>
+          </div>
+
+          {botValidation && (
+            <div className="text-sm space-y-2">
+              <div className="flex items-center space-x-2">
+                <span className="font-medium">Bot Token 状态:</span>
+                <span
+                  className={
+                    botValidation.valid
+                      ? "text-green-600 font-semibold"
+                      : "text-red-600 font-semibold"
+                  }
+                >
+                  {botValidation.valid ? "✅ 有效" : "❌ 无效"}
+                </span>
+              </div>
+
+              {botValidation.valid && botValidation.bot && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded">
+                  <div className="font-medium text-green-800 mb-2">
+                    Bot 信息:
+                  </div>
+                  <div className="text-green-700 space-y-1">
+                    <div>ID: {botValidation.bot.id}</div>
+                    <div>用户名: @{botValidation.bot.username}</div>
+                    <div>名称: {botValidation.bot.first_name}</div>
+                    <div>Token 前缀: {botValidation.tokenPrefix}</div>
+                  </div>
+                </div>
+              )}
+
+              {!botValidation.valid && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded">
+                  <div className="font-medium text-red-800 mb-2">
+                    ❌ 验证失败:
+                  </div>
+                  <div className="text-red-700">
+                    {botValidation.error}
+                    {botValidation.errorCode &&
+                      ` (错误代码: ${botValidation.errorCode})`}
+                  </div>
+                  <div className="mt-2 text-xs text-red-600">
+                    请检查 .env.local 中的 TELEGRAM_BOT_TOKEN 是否正确
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Hook 认证状态 */}
