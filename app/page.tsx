@@ -96,9 +96,17 @@ export default function Home() {
       <div className="max-w-md mx-auto">
         {/* 用户信息 */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-blue-800 mb-4">
-            🍃 漂流瓶 🍃
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <div></div>
+            <h1 className="text-2xl font-bold text-blue-800">🍃 漂流瓶 🍃</h1>
+            <button
+              onClick={() => window.open("/debug", "_blank")}
+              className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors"
+              title="打开调试页面"
+            >
+              🔍 调试
+            </button>
+          </div>
           {/* 只在认证成功时显示用户信息 */}
           {isAuthenticated && authenticatedUser && (
             <p className="text-blue-600 mb-4">
