@@ -1,5 +1,4 @@
-import CryptoJS from "crypto-js";
-import crypto from "crypto";
+const crypto = require("crypto");
 
 export interface TelegramUser {
   id: number;
@@ -53,13 +52,14 @@ export function validateTelegramInitData(
       botTokenPrefix: botToken.substring(0, 15) + "...",
     });
 
-    // 解析 URL 编码的数据
-    const urlParams = new URLSearchParams(initData);
+    // 手动解析参数（避免自动解码）
+    const pairs = initData.split("&");
     const data: Record<string, any> = {};
 
-    // 收集所有参数
-    for (const [key, value] of urlParams.entries()) {
-      data[key] = value; // 全部保留原始字符串
+    // 收集所有参数，保持原始编码
+    for (const pair of pairs) {
+      const [key, value] = pair.split("=", 2);
+      data[key] = value;
     }
 
     // 提取并验证 hash
@@ -194,4 +194,62 @@ export function parseInitData(initData: string): TelegramInitData | null {
     console.error("解析 InitData 失败:", error);
     return null;
   }
+}
+
+/**
+ * 本地对比 Telegram hash 校验工具
+ * @param initData - Telegram WebApp 获取的初始化数据字符串
+ * @param botToken - Telegram Bot Token
+ */
+export function checkTelegramHashDebug(initData: string, botToken: string) {
+  console.log("🔍 开始验证 InitData:", {
+    initDataLength: initData.length,
+    botTokenPrefix: botToken.substring(0, 15) + "...",
+  });
+  const urlParams = new URLSearchParams(initData);
+  const data: Record<string, any> = {};
+  for (const [key, value] of urlParams.entries()) {
+    data[key] = value;
+  }
+  const receivedHash = data.hash;
+  delete data.hash;
+  // 验证哈希
+
+  urlParams.delete("hash");
+  const dataCheckString = Array.from(urlParams.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+  const crypto = require("crypto");
+  const secretKey = crypto
+    .createHmac("sha256", "WebAppData")
+    .update(botToken)
+    .digest();
+  const expectedHash = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
+  console.log("【DEBUG】dataCheckString:\n", dataCheckString);
+  console.log("【DEBUG】secretKey (hex):", secretKey.toString("hex"));
+  console.log("【DEBUG】expectedHash:", expectedHash);
+  console.log("【DEBUG】receivedHash:", receivedHash);
+  if (expectedHash === receivedHash) {
+    console.log("✅ Hash 校验通过");
+    return true;
+  } else {
+    console.log("❌ Hash 校验失败");
+    return false;
+  }
+}
+
+// ====== 本地命令行调试入口 ======
+if (require.main === module) {
+  // 你可以在这里填写你的 initData 和 botToken 进行本地测试
+  const initData = process.env.TG_INIT_DATA || ""; // 推荐用环境变量传递，避免泄漏
+  const botToken = process.env.TG_BOT_TOKEN || "";
+  if (!initData || !botToken) {
+    console.log("请通过环境变量 TG_INIT_DATA 和 TG_BOT_TOKEN 传入参数");
+    process.exit(1);
+  }
+  checkTelegramHashDebug(initData, botToken);
 }
