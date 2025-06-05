@@ -1,0 +1,43 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 项目结构指南
+
+## 核心架构
+这是一个基于 Next.js 14 App Router 的 Telegram Mini App 漂流瓶应用。
+
+## 目录结构
+
+### 主要目录
+- **app/**: Next.js App Router 核心目录
+  - `page.tsx`: 主页面
+  - `layout.tsx`: 布局组件 
+  - `globals.css`: 全局样式
+  - `api/`: API 路由目录
+- **components/**: React 组件目录
+- **hooks/**: 自定义 React hooks
+- **lib/**: 工具函数和核心库
+- **public/**: 静态资源
+
+### 配置文件
+- [package.json](mdc:package.json): 项目依赖和脚本
+- [next.config.js](mdc:next.config.js): Next.js 配置
+- [tailwind.config.js](mdc:tailwind.config.js): Tailwind CSS 配置
+- [tsconfig.json](mdc:tsconfig.json): TypeScript 配置
+- [vercel.json](mdc:vercel.json): Vercel 部署配置
+
+## 开发指南
+
+### 新组件创建
+所有新组件应放在 `components/` 目录下，使用 TypeScript 和函数式组件模式。
+
+### API 开发
+所有 API 路由应在 `app/api/` 目录下创建，遵循 RESTful 设计原则。
+
+### 样式系统
+使用 Tailwind CSS 进行样式开发，避免内联样式。
+
+### 状态管理
+根据项目需要，考虑使用 Zustand 进行状态管理。

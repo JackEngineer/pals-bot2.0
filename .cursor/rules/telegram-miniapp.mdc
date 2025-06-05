@@ -1,0 +1,174 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Telegram Mini App 开发规范
+
+## 核心集成
+
+### SDK 使用
+项目使用 `@telegram-apps/sdk-react` 进行 Telegram 集成，配置在 [package.json](mdc:package.json) 中。
+
+### 用户认证
+- 使用 Telegram InitData 进行用户身份验证
+- 实现 HMAC-SHA256 验证确保数据安全性
+- 验证时间戳防止重放攻击
+
+```typescript
+import { validateTelegramInitData } from '@/lib/telegram-auth';
+
+// 验证用户身份
+const validation = validateTelegramInitData(initData, botToken);
+if (!validation.isValid) {
+  throw new Error(`认证失败: ${validation.error}`);
+}
+```
+
+## UI/UX 指南
+
+### 设计原则
+- 遵循 Telegram 的设计语言
+- 使用适合移动端的触摸交互
+- 保持界面简洁直观
+- 考虑深色/浅色主题适配
+
+### 响应式设计
+- 优先考虑移动端体验
+- 使用 Tailwind 的响应式断点
+- 测试不同屏幕尺寸的显示效果
+
+### 触摸优化
+- 按钮最小触摸区域 44px x 44px
+- 使用适当的触摸反馈
+- 考虑手势操作
+
+## 数据交互
+
+### API 安全
+- 所有 API 请求必须包含 Telegram InitData 验证
+- 实现速率限制防止滥用
+- 敏感操作需要额外验证
+
+### 用户数据
+- 基于 Telegram 用户 ID 进行用户关联
+- 保护用户隐私，实现匿名化功能
+- 遵循 Telegram 的数据使用政策
+
+```typescript
+interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+}
+```
+
+## 漂流瓶业务逻辑
+
+### 核心功能实现
+- **投递漂流瓶**: 用户创建内容并投入数字海洋
+- **随机发现**: 实现算法确保用户不会收到自己的漂流瓶
+- **匿名回复**: 保护用户隐私的回复机制
+- **内容审核**: 基础的内容过滤和举报功能
+
+### 数据模型
+```typescript
+interface Bottle {
+  id: string;
+  userId: string;
+  content: string;
+  mediaType?: 'text' | 'image' | 'audio';
+  mediaUrl?: string;
+  bottleStyle?: BottleStyle;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+interface BottleStyle {
+  color: string;
+  pattern: string;
+  decoration: string;
+}
+```
+
+### 发现算法
+- 确保用户不会发现自己投递的漂流瓶
+- 实现权重机制，新投递的漂流瓶优先被发现
+- 考虑用户活跃度和互动历史
+
+## 媒体处理
+
+### 图片处理
+- 使用 Vercel Blob 存储图片
+- 实现图片压缩和格式优化
+- 支持多种图片格式 (JPEG, PNG, WebP)
+
+### 语音处理
+- 支持语音消息录制和播放
+- 实现音频文件的压缩和存储
+- 考虑音频质量和文件大小平衡
+
+## 性能优化
+
+### 加载优化
+- 使用 Next.js Image 组件优化图片加载
+- 实现懒加载减少初始加载时间
+- 使用适当的缓存策略
+
+### 网络优化
+- 实现离线功能支持
+- 优化 API 请求减少网络延迟
+- 使用 SWR 或 TanStack Query 进行数据缓存
+
+## 安全考虑
+
+### InitData 验证流程
+```typescript
+export function validateTelegramInitData(
+  initData: string,
+  botToken: string
+): ValidationResult {
+  // 1. 解析 InitData
+  // 2. 验证 HMAC
+  // 3. 检查时间戳
+  // 4. 返回验证结果
+}
+```
+
+### 内容安全
+- 实现基础的内容过滤
+- 支持用户举报功能
+- 定期审核用户生成内容
+
+### 隐私保护
+- 漂流瓶内容与用户身份分离
+- 实现匿名回复机制
+- 遵循 GDPR 和相关隐私法规
+
+## 部署配置
+
+### Vercel 配置
+参考 [vercel.json](mdc:vercel.json) 进行部署配置：
+- 配置环境变量
+- 设置函数超时时间
+- 配置域名和 SSL
+
+### 环境变量
+必需的环境变量：
+- `TELEGRAM_BOT_TOKEN`: Telegram Bot Token
+- `DATABASE_URL`: 数据库连接字符串
+- `BLOB_READ_WRITE_TOKEN`: Vercel Blob 存储令牌
+
+## 测试策略
+
+### Telegram 环境测试
+- 在真实 Telegram 环境中测试
+- 使用 Telegram Web App 测试工具
+- 验证不同设备和系统的兼容性
+
+### 模拟用户行为
+- 测试多用户交互场景
+- 验证匿名性和隐私保护
+- 测试边界情况和错误处理

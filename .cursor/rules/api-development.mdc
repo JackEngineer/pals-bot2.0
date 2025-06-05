@@ -1,0 +1,387 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# API 开发规范
+
+## API 架构设计
+
+### RESTful 设计原则
+所有 API 路由应遵循 RESTful 设计原则，位于 `app/api/` 目录下。
+
+### 核心 API 端点
+```
+POST   /api/auth/login          # Telegram 用户认证
+GET    /api/bottles/random      # 获取随机漂流瓶
+POST   /api/bottles             # 投递新漂流瓶
+POST   /api/bottles/[id]/reply  # 回复漂流瓶
+GET    /api/user/statistics     # 用户数据统计
+POST   /api/upload              # 媒体文件上传
+GET    /api/user/profile        # 获取用户资料
+PUT    /api/user/profile        # 更新用户资料
+```
+
+## 请求/响应规范
+
+### 统一响应格式
+```typescript
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+  timestamp: string;
+}
+
+// 成功响应
+{
+  "success": true,
+  "data": { /* 响应数据 */ },
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+
+// 错误响应
+{
+  "success": false,
+  "error": "VALIDATION_ERROR",
+  "message": "请求参数验证失败",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### 状态码规范
+- `200`: 请求成功
+- `201`: 资源创建成功
+- `400`: 请求参数错误
+- `401`: 未授权访问
+- `403`: 权限不足
+- `404`: 资源不存在
+- `429`: 请求频率过高
+- `500`: 服务器内部错误
+
+## 身份认证
+
+### Telegram InitData 验证
+所有需要用户身份的 API 都必须进行 InitData 验证：
+
+```typescript
+// 认证中间件
+export async function verifyTelegramAuth(request: NextRequest) {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const initData = authHeader.replace('Bearer ', '');
+  const validation = validateTelegramInitData(
+    initData,
+    process.env.TELEGRAM_BOT_TOKEN!
+  );
+
+  if (!validation.isValid) {
+    return new Response('Invalid authentication', { status: 401 });
+  }
+
+  return validation.data;
+}
+```
+
+### 用户上下文获取
+```typescript
+export async function getUserFromRequest(request: NextRequest) {
+  const authData = await verifyTelegramAuth(request);
+  const user = await getUserByTelegramId(authData.user.id);
+  return user;
+}
+```
+
+## 数据验证
+
+### 请求体验证
+使用 Zod 进行请求参数验证：
+
+```typescript
+import { z } from 'zod';
+
+const CreateBottleSchema = z.object({
+  content: z.string().min(1).max(1000),
+  mediaType: z.enum(['text', 'image', 'audio']).optional(),
+  mediaUrl: z.string().url().optional(),
+  bottleStyle: z.object({
+    color: z.string(),
+    pattern: z.string(),
+    decoration: z.string(),
+  }).optional(),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const validatedData = CreateBottleSchema.parse(body);
+    
+    // 业务逻辑处理
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'VALIDATION_ERROR',
+          message: error.errors[0].message 
+        },
+        { status: 400 }
+      );
+    }
+  }
+}
+```
+
+## 数据库操作
+
+### Prisma 最佳实践
+```typescript
+// 使用事务处理复杂操作
+export async function createBottleWithDiscovery(
+  bottleData: CreateBottleData,
+  userId: string
+) {
+  return await prisma.$transaction(async (tx) => {
+    const bottle = await tx.bottle.create({
+      data: {
+        ...bottleData,
+        userId,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        bottleCount: { increment: 1 },
+      },
+    });
+
+    return bottle;
+  });
+}
+```
+
+### 查询优化
+```typescript
+// 使用 select 减少数据传输
+const bottles = await prisma.bottle.findMany({
+  select: {
+    id: true,
+    content: true,
+    createdAt: true,
+    user: {
+      select: {
+        id: true,
+        firstName: true,
+      },
+    },
+  },
+  where: { isActive: true },
+  orderBy: { createdAt: 'desc' },
+  take: 10,
+});
+```
+
+## 错误处理
+
+### 统一错误处理器
+```typescript
+export class ApiError extends Error {
+  constructor(
+    public statusCode: number,
+    public code: string,
+    message: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export function handleApiError(error: unknown) {
+  if (error instanceof ApiError) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error.code,
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      },
+      { status: error.statusCode }
+    );
+  }
+
+  // 未知错误
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'INTERNAL_ERROR',
+      message: '服务器内部错误',
+      timestamp: new Date().toISOString(),
+    },
+    { status: 500 }
+  );
+}
+```
+
+## 速率限制
+
+### 基础限流实现
+```typescript
+import { LRUCache } from 'lru-cache';
+
+type RateLimitConfig = {
+  interval: number; // 时间窗口（毫秒）
+  uniqueTokenPerInterval: number; // 唯一令牌数
+};
+
+const rateLimitCache = new LRUCache<string, number>({
+  max: 500,
+  ttl: 60000, // 1分钟
+});
+
+export function rateLimit(config: RateLimitConfig) {
+  return async (request: NextRequest) => {
+    const token = getClientIdentifier(request);
+    const tokenCount = rateLimitCache.get(token) || 0;
+
+    if (tokenCount >= config.uniqueTokenPerInterval) {
+      return new Response('Rate limit exceeded', { status: 429 });
+    }
+
+    rateLimitCache.set(token, tokenCount + 1);
+    return null; // 允许继续
+  };
+}
+```
+
+## 文件上传
+
+### 媒体文件处理
+```typescript
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+
+    if (!file) {
+      return NextResponse.json(
+        { success: false, error: 'NO_FILE', message: '未提供文件' },
+        { status: 400 }
+      );
+    }
+
+    // 文件类型验证
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'audio/mpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { success: false, error: 'INVALID_FILE_TYPE', message: '不支持的文件类型' },
+        { status: 400 }
+      );
+    }
+
+    // 上传到 Vercel Blob
+    const blob = await put(file.name, file, {
+      access: 'public',
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: { url: blob.url },
+    });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+```
+
+## 缓存策略
+
+### Redis 缓存实现
+```typescript
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.REDIS_URL!,
+  token: process.env.REDIS_TOKEN!,
+});
+
+export async function getCachedBottle(id: string) {
+  const cached = await redis.get(`bottle:${id}`);
+  if (cached) {
+    return JSON.parse(cached as string);
+  }
+
+  const bottle = await prisma.bottle.findUnique({
+    where: { id },
+    include: { user: true },
+  });
+
+  if (bottle) {
+    await redis.setex(`bottle:${id}`, 300, JSON.stringify(bottle)); // 5分钟缓存
+  }
+
+  return bottle;
+}
+```
+
+## 日志和监控
+
+### 结构化日志
+```typescript
+export function logApiRequest(
+  method: string,
+  path: string,
+  userId?: string,
+  duration?: number
+) {
+  console.log(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    level: 'info',
+    method,
+    path,
+    userId,
+    duration,
+    source: 'api',
+  }));
+}
+```
+
+### 性能监控
+```typescript
+export function withPerformanceMonitoring(handler: Function) {
+  return async (request: NextRequest) => {
+    const startTime = Date.now();
+    
+    try {
+      const response = await handler(request);
+      const duration = Date.now() - startTime;
+      
+      logApiRequest(
+        request.method,
+        request.nextUrl.pathname,
+        undefined,
+        duration
+      );
+      
+      return response;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      console.error(JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'error',
+        method: request.method,
+        path: request.nextUrl.pathname,
+        duration,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }));
+      
+      throw error;
+    }
+  };
+}
+```

@@ -1,0 +1,427 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# UI/UX 设计规范
+
+## 设计系统基础
+
+### 颜色系统
+基于 Tailwind CSS 预设色彩，参考 [tailwind.config.js](mdc:tailwind.config.js) 配置：
+
+```typescript
+// 主要色彩
+const colors = {
+  primary: {
+    50: '#eff6ff',
+    500: '#3b82f6',
+    600: '#2563eb',
+    700: '#1d4ed8',
+  },
+  secondary: {
+    50: '#f8fafc',
+    500: '#64748b',
+    600: '#475569',
+  },
+  accent: {
+    500: '#06b6d4',
+    600: '#0891b2',
+  },
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+};
+```
+
+### 字体系统
+```css
+/* 全局字体样式在 globals.css 中定义 */
+.text-xs    { font-size: 0.75rem; }   /* 12px */
+.text-sm    { font-size: 0.875rem; }  /* 14px */
+.text-base  { font-size: 1rem; }      /* 16px */
+.text-lg    { font-size: 1.125rem; }  /* 18px */
+.text-xl    { font-size: 1.25rem; }   /* 20px */
+.text-2xl   { font-size: 1.5rem; }    /* 24px */
+.text-3xl   { font-size: 1.875rem; }  /* 30px */
+```
+
+### 间距系统
+```css
+/* Tailwind 间距系统 */
+.p-1   { padding: 0.25rem; }    /* 4px */
+.p-2   { padding: 0.5rem; }     /* 8px */
+.p-4   { padding: 1rem; }       /* 16px */
+.p-6   { padding: 1.5rem; }     /* 24px */
+.p-8   { padding: 2rem; }       /* 32px */
+
+/* 外边距同理 */
+.m-1, .m-2, .m-4, .m-6, .m-8
+```
+
+## 组件设计规范
+
+### 按钮组件
+```typescript
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+// 使用示例
+<Button 
+  variant="primary" 
+  size="md" 
+  className="w-full"
+>
+  投递漂流瓶
+</Button>
+```
+
+### 卡片组件
+```typescript
+interface BottleCardProps {
+  bottle: BottleData;
+  onReply?: () => void;
+  onLike?: () => void;
+  className?: string;
+}
+
+// 设计要点：
+// - 圆角: rounded-lg (8px)
+// - 阴影: shadow-md
+// - 边框: border border-gray-200
+// - 内边距: p-6
+```
+
+### 输入框组件
+```typescript
+interface InputProps {
+  label?: string;
+  placeholder?: string;
+  error?: string;
+  disabled?: boolean;
+  multiline?: boolean;
+  maxLength?: number;
+}
+
+// 设计要点：
+// - 边框: border-2 border-gray-300
+// - 聚焦状态: focus:border-primary-500
+// - 错误状态: border-red-500
+// - 圆角: rounded-md
+```
+
+## 布局规范
+
+### 页面布局
+```typescript
+// 标准页面布局结构
+<div className="min-h-screen bg-gray-50">
+  <header className="sticky top-0 z-50 bg-white border-b">
+    {/* 页面头部 */}
+  </header>
+  
+  <main className="container mx-auto px-4 py-6">
+    {/* 主要内容 */}
+  </main>
+  
+  <footer className="mt-auto py-4 bg-white border-t">
+    {/* 页面底部 */}
+  </footer>
+</div>
+```
+
+### 响应式网格
+```css
+/* 移动端优先的响应式设计 */
+.grid-responsive {
+  @apply grid grid-cols-1 gap-4;
+  @apply sm:grid-cols-2 sm:gap-6;
+  @apply lg:grid-cols-3 lg:gap-8;
+}
+```
+
+### 容器规范
+```css
+/* 页面容器 */
+.container {
+  @apply max-w-7xl mx-auto px-4;
+  @apply sm:px-6 lg:px-8;
+}
+
+/* 内容容器 */
+.content-container {
+  @apply max-w-2xl mx-auto;
+}
+```
+
+## 交互设计
+
+### 触摸友好设计
+- 最小触摸目标: 44px x 44px
+- 按钮间距: 至少 8px
+- 手势支持: 滑动、长按等
+
+```css
+/* 触摸友好的按钮样式 */
+.touch-button {
+  @apply min-h-[44px] min-w-[44px];
+  @apply touch-manipulation;
+  @apply active:scale-95 transition-transform;
+}
+```
+
+### 动画规范
+```typescript
+// 使用 Framer Motion 进行动画
+import { motion } from 'framer-motion';
+
+// 页面切换动画
+const pageVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
+};
+
+// 组件入场动画
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.3 },
+};
+```
+
+### 加载状态
+```typescript
+// 骨架屏组件
+export function BottleCardSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="h-4 bg-gray-200 rounded mb-2"></div>
+      <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+    </div>
+  );
+}
+
+// 加载指示器
+export function LoadingSpinner() {
+  return (
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+  );
+}
+```
+
+## 漂流瓶专属设计
+
+### 漂流瓶样式
+```typescript
+interface BottleStyle {
+  color: 'blue' | 'green' | 'amber' | 'purple' | 'pink';
+  pattern: 'solid' | 'gradient' | 'striped' | 'dotted';
+  decoration: 'none' | 'stars' | 'hearts' | 'waves';
+}
+
+// 漂流瓶视觉效果
+const bottleStyles = {
+  blue: 'bg-gradient-to-br from-blue-400 to-blue-600',
+  green: 'bg-gradient-to-br from-green-400 to-green-600',
+  amber: 'bg-gradient-to-br from-amber-400 to-amber-600',
+  purple: 'bg-gradient-to-br from-purple-400 to-purple-600',
+  pink: 'bg-gradient-to-br from-pink-400 to-pink-600',
+};
+```
+
+### 海洋主题设计
+```css
+/* 海洋背景效果 */
+.ocean-background {
+  @apply bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 2px, transparent 2px),
+    radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px);
+}
+
+/* 波浪动效 */
+.wave-animation {
+  @apply relative overflow-hidden;
+}
+
+.wave-animation::before {
+  content: '';
+  @apply absolute inset-0 opacity-30;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: wave 2s infinite linear;
+}
+
+@keyframes wave {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+```
+
+## 状态设计
+
+### 空状态
+```typescript
+export function EmptyState({ 
+  title, 
+  description, 
+  action 
+}: EmptyStateProps) {
+  return (
+    <div className="text-center py-12">
+      <div className="w-24 h-24 mx-auto mb-4 text-gray-400">
+        {/* 空状态图标 */}
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        {title}
+      </h3>
+      <p className="text-gray-500 mb-6">
+        {description}
+      </p>
+      {action}
+    </div>
+  );
+}
+```
+
+### 错误状态
+```typescript
+export function ErrorState({ 
+  error, 
+  onRetry 
+}: ErrorStateProps) {
+  return (
+    <div className="text-center py-12">
+      <div className="text-red-500 text-6xl mb-4">⚠️</div>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        出错了
+      </h3>
+      <p className="text-gray-500 mb-6">
+        {error.message}
+      </p>
+      <Button onClick={onRetry} variant="outline">
+        重试
+      </Button>
+    </div>
+  );
+}
+```
+
+## 无障碍设计
+
+### 语义化 HTML
+```typescript
+// 使用适当的 HTML 语义标签
+<article className="bottle-card">
+  <header className="bottle-header">
+    <h2 className="bottle-title">漂流瓶标题</h2>
+    <time className="bottle-date" dateTime="2024-01-01">
+      1小时前
+    </time>
+  </header>
+  
+  <main className="bottle-content">
+    <p>漂流瓶内容...</p>
+  </main>
+  
+  <footer className="bottle-actions">
+    <button aria-label="回复漂流瓶">回复</button>
+    <button aria-label="收藏漂流瓶">收藏</button>
+  </footer>
+</article>
+```
+
+### 键盘导航
+```css
+/* 聚焦指示器 */
+.focus-visible {
+  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+}
+
+/* 跳过链接 */
+.skip-link {
+  @apply sr-only focus:not-sr-only;
+  @apply fixed top-4 left-4 z-50;
+  @apply bg-primary-600 text-white px-4 py-2 rounded;
+}
+```
+
+### ARIA 标签
+```typescript
+// 为动态内容添加适当的 ARIA 标签
+<div 
+  role="status" 
+  aria-live="polite"
+  aria-label="漂流瓶加载状态"
+>
+  {loading ? '正在加载漂流瓶...' : `发现了 ${bottles.length} 个漂流瓶`}
+</div>
+```
+
+## 性能优化
+
+### 图片优化
+```typescript
+import Image from 'next/image';
+
+// 使用 Next.js Image 组件
+<Image
+  src={bottleImage}
+  alt="漂流瓶图片"
+  width={300}
+  height={300}
+  placeholder="blur"
+  blurDataURL="data:image/..."
+  className="rounded-lg object-cover"
+/>
+```
+
+### 懒加载组件
+```typescript
+import dynamic from 'next/dynamic';
+
+// 懒加载重型组件
+const BottleEditor = dynamic(
+  () => import('@/components/BottleEditor'),
+  { 
+    loading: () => <BottleEditorSkeleton />,
+    ssr: false 
+  }
+);
+```
+
+## 主题支持
+
+### 深色模式
+```css
+/* 深色模式样式 */
+@media (prefers-color-scheme: dark) {
+  .dark-mode {
+    @apply bg-gray-900 text-white;
+  }
+  
+  .dark-mode .card {
+    @apply bg-gray-800 border-gray-700;
+  }
+}
+```
+
+### 主题切换
+```typescript
+export function useTheme() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+  
+  return { theme, toggleTheme };
+}
+```
