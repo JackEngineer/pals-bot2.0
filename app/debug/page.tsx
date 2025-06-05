@@ -13,6 +13,7 @@ export default function DebugPage() {
   const [envCheck, setEnvCheck] = useState<any>(null);
   const [apiTestResult, setApiTestResult] = useState<any>(null);
   const [botValidation, setBotValidation] = useState<any>(null);
+  const [manualInitData, setManualInitData] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -75,7 +76,8 @@ export default function DebugPage() {
     setApiTestResult({ loading: true });
 
     try {
-      const initData = initDataRaw || "test_init_data";
+      // 优先使用手动输入的数据，其次使用自动获取的数据
+      const initData = manualInitData || initDataRaw || "test_init_data";
 
       const response = await fetch("/api/auth/telegram", {
         method: "POST",
@@ -95,6 +97,11 @@ export default function DebugPage() {
         data: result,
         timestamp: new Date().toISOString(),
         requestData: { initData },
+        dataSource: manualInitData
+          ? "手动输入"
+          : initDataRaw
+          ? "自动获取"
+          : "测试数据",
       });
     } catch (error) {
       setApiTestResult({
@@ -108,8 +115,9 @@ export default function DebugPage() {
   };
 
   const testManualAuth = async () => {
-    if (!initDataRaw) {
-      alert("没有找到 InitData");
+    const testData = manualInitData || initDataRaw;
+    if (!testData) {
+      alert("没有找到 InitData，请手动输入或确保从 Telegram 启动应用");
       return;
     }
 
@@ -119,7 +127,7 @@ export default function DebugPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ initData: initDataRaw }),
+        body: JSON.stringify({ initData: testData }),
       });
 
       const result = await response.json();
@@ -127,6 +135,7 @@ export default function DebugPage() {
         status: response.status,
         success: response.ok,
         data: result,
+        dataSource: manualInitData ? "手动输入" : "自动获取",
       });
     } catch (error) {
       setManualTestResult({
@@ -164,13 +173,70 @@ export default function DebugPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-red-800">🚨 API 直接测试</h2>
-            <button
-              onClick={testApiDirect}
-              disabled={apiTestResult?.loading}
-              className="text-sm bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 py-1 rounded transition-colors"
-            >
-              {apiTestResult?.loading ? "测试中..." : "测试 API"}
-            </button>
+            <div className="space-x-2">
+              <button
+                onClick={() => {
+                  // 从URL参数重建完整initData
+                  if (typeof window !== "undefined") {
+                    const urlParams = new URLSearchParams(
+                      window.location.search
+                    );
+                    const userPart = urlParams.get("tgWebAppData") || "";
+                    const additionalParams = [];
+
+                    for (const [key, value] of urlParams.entries()) {
+                      if (
+                        key !== "tgWebAppData" &&
+                        (key === "chat_instance" ||
+                          key === "chat_type" ||
+                          key === "auth_date" ||
+                          key === "hash" ||
+                          key === "signature" ||
+                          key === "query_id" ||
+                          key === "start_param")
+                      ) {
+                        additionalParams.push(`${key}=${value}`);
+                      }
+                    }
+
+                    if (additionalParams.length > 0) {
+                      const rebuiltInitData =
+                        userPart + "&" + additionalParams.join("&");
+                      setManualInitData(rebuiltInitData);
+                      alert("已从URL重建完整 initData！");
+                    } else {
+                      alert("URL中没有找到额外的参数");
+                    }
+                  }
+                }}
+                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition-colors"
+              >
+                从URL重建
+              </button>
+              <button
+                onClick={testApiDirect}
+                disabled={apiTestResult?.loading}
+                className="text-sm bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white px-3 py-1 rounded transition-colors"
+              >
+                {apiTestResult?.loading ? "测试中..." : "测试 API"}
+              </button>
+            </div>
+          </div>
+
+          {/* 手动输入 initData */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-red-800 mb-2">
+              手动输入 InitData (可选):
+            </label>
+            <textarea
+              value={manualInitData}
+              onChange={(e) => setManualInitData(e.target.value)}
+              placeholder="如果自动获取的 initData 不完整，可以手动输入完整的数据..."
+              className="w-full h-24 p-2 border border-red-300 rounded text-xs font-mono"
+            />
+            <div className="text-xs text-red-600 mt-1">
+              当前使用: {manualInitData ? "手动输入的数据" : "自动获取的数据"}
+            </div>
           </div>
 
           {apiTestResult && (
@@ -189,6 +255,15 @@ export default function DebugPage() {
                   {apiTestResult.status} {apiTestResult.statusText}
                 </span>
               </div>
+
+              {apiTestResult.dataSource && (
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium">数据来源:</span>
+                  <span className="text-blue-600">
+                    {apiTestResult.dataSource}
+                  </span>
+                </div>
+              )}
 
               {apiTestResult.status === 401 && (
                 <div className="p-3 bg-red-100 rounded border">

@@ -108,18 +108,11 @@ export default function Home() {
                 ) {
                   const initData = window.Telegram.WebApp.initData;
                   if (initData) {
-                    // 先尝试不编码直接传递（避免双重编码）
-                    try {
-                      const debugUrl = `/debug?tgWebAppData=${initData}`;
-                      window.open(debugUrl, "_blank");
-                    } catch (e) {
-                      // 如果直接传递失败，再使用编码方式
-                      console.warn("直接传递失败，使用编码方式:", e);
-                      const debugUrl = `/debug?tgWebAppData=${encodeURIComponent(
-                        initData
-                      )}`;
-                      window.open(debugUrl, "_blank");
-                    }
+                    // 必须对完整的initData进行编码，作为单个参数值传递
+                    const debugUrl = `/debug?tgWebAppData=${encodeURIComponent(
+                      initData
+                    )}`;
+                    window.open(debugUrl, "_blank");
                   } else {
                     window.open("/debug", "_blank");
                   }

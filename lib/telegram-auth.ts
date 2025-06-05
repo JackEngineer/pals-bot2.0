@@ -191,28 +191,57 @@ export function getTelegramInitData(): string | null {
   const initDataFromUrl = urlParams.get("tgWebAppData");
   if (initDataFromUrl) {
     console.log("🔄 从 URL 参数获取 initData");
+
+    // 检查是否有其他相关参数（chat_instance, auth_date, hash等）
+    // 这些可能因为URL解析问题被分离为独立参数
+    const additionalParams = [];
+    for (const [key, value] of urlParams.entries()) {
+      if (
+        key !== "tgWebAppData" &&
+        (key === "chat_instance" ||
+          key === "chat_type" ||
+          key === "auth_date" ||
+          key === "hash" ||
+          key === "signature" ||
+          key === "query_id" ||
+          key === "start_param")
+      ) {
+        additionalParams.push(`${key}=${value}`);
+      }
+    }
+
+    // 重建完整的initData
+    let fullInitData = initDataFromUrl;
+    if (additionalParams.length > 0) {
+      fullInitData = initDataFromUrl + "&" + additionalParams.join("&");
+      console.log("🔧 从URL参数重建完整 initData:", {
+        original: initDataFromUrl,
+        additional: additionalParams,
+        rebuilt: fullInitData.substring(0, 200) + "...",
+      });
+    }
+
     console.log("📊 URL数据统计:", {
-      length: initDataFromUrl.length,
-      containsHash: initDataFromUrl.includes("hash="),
-      containsAuthDate: initDataFromUrl.includes("auth_date="),
-      containsQueryId: initDataFromUrl.includes("query_id="),
-      fieldCount: initDataFromUrl.split("&").length,
+      length: fullInitData.length,
+      containsHash: fullInitData.includes("hash="),
+      containsAuthDate: fullInitData.includes("auth_date="),
+      containsQueryId: fullInitData.includes("query_id="),
+      fieldCount: fullInitData.split("&").length,
     });
 
-    // URL参数已经被URLSearchParams自动解码一次了
     // 检查是否需要再次解码（如果数据仍然包含%编码）
     try {
-      if (initDataFromUrl.includes("%")) {
+      if (fullInitData.includes("%")) {
         console.log("⚠️ 检测到URL编码字符，尝试解码");
-        const decoded = decodeURIComponent(initDataFromUrl);
-        console.log("🔍 解码前:", initDataFromUrl.substring(0, 100) + "...");
+        const decoded = decodeURIComponent(fullInitData);
+        console.log("🔍 解码前:", fullInitData.substring(0, 100) + "...");
         console.log("🔍 解码后:", decoded.substring(0, 100) + "...");
         return decoded;
       }
-      return initDataFromUrl;
+      return fullInitData;
     } catch (e) {
       console.warn("⚠️ URL解码失败，使用原始数据:", e);
-      return initDataFromUrl;
+      return fullInitData;
     }
   }
 
