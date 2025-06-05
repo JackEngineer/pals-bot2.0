@@ -160,7 +160,7 @@ export function getTelegramInitData(): string | null {
   const urlParams = new URLSearchParams(window.location.search);
   const initDataFromUrl = urlParams.get("tgWebAppData");
   if (initDataFromUrl) {
-    return decodeURIComponent(initDataFromUrl);
+    return initDataFromUrl; // 直接返回，不再解码
   }
 
   // 从 Telegram WebApp API 获取
@@ -202,28 +202,22 @@ export function parseInitData(initData: string): TelegramInitData | null {
  * @param botToken - Telegram Bot Token
  */
 export function checkTelegramHashDebug(initData: string, botToken: string) {
-  console.log("🔍 开始验证 InitData:", {
-    initDataLength: initData.length,
-    botTokenPrefix: botToken.substring(0, 15) + "...",
-  });
-  const urlParams = new URLSearchParams(initData);
+  const pairs = initData.split("&");
   const data: Record<string, any> = {};
-  for (const [key, value] of urlParams.entries()) {
+  for (const pair of pairs) {
+    const [key, value] = pair.split("=", 2);
     data[key] = value;
   }
   const receivedHash = data.hash;
   delete data.hash;
-  // 验证哈希
-
-  urlParams.delete("hash");
-  const dataCheckString = Array.from(urlParams.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`)
+  delete data.signature; // 移除 signature 字段
+  const dataCheckString = Object.keys(data)
+    .sort()
+    .map((key) => `${key}=${data[key]}`)
     .join("\n");
-  const crypto = require("crypto");
   const secretKey = crypto
-    .createHmac("sha256", "WebAppData")
-    .update(botToken)
+    .createHmac("sha256", botToken)
+    .update("WebAppData")
     .digest();
   const expectedHash = crypto
     .createHmac("sha256", secretKey)

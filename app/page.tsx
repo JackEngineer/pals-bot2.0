@@ -109,7 +109,7 @@ export default function Home() {
                 ) {
                   const initData = window.Telegram.WebApp.initData;
                   if (initData) {
-                    url += `?tgWebAppData=${encodeURIComponent(initData)}`;
+                    url += `?tgWebAppData=${initData}`;
                   }
                 }
                 window.open(url, "_blank");
