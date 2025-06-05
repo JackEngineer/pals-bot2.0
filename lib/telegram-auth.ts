@@ -50,6 +50,9 @@ export function validateTelegramInitData(
     console.log("🔍 开始验证 InitData:", {
       initDataLength: initData.length,
       botTokenPrefix: botToken.substring(0, 15) + "...",
+      containsPercent: initData.includes("%"),
+      containsBackslash: initData.includes("\\"),
+      sampleData: initData.substring(0, 200) + "...",
     });
 
     // 手动解析参数（避免自动解码）
@@ -79,6 +82,16 @@ export function validateTelegramInitData(
       .join("\n");
 
     console.log("🔧 数据检查字符串:", dataCheckString);
+
+    // 调试user字段编码
+    if (data.user) {
+      console.log("👤 User字段调试:", {
+        rawUser: data.user,
+        containsBackslash: data.user.includes("\\"),
+        containsPercent: data.user.includes("%"),
+        length: data.user.length,
+      });
+    }
 
     // 按照 Telegram 官方文档计算 hash（使用 node 原生 crypto）
     // 1. secret_key = HMAC-SHA256("WebAppData", botToken)
@@ -159,6 +172,7 @@ export function getTelegramInitData(): string | null {
 
   // 优先从 Telegram WebApp API 获取
   if (window.Telegram?.WebApp?.initData) {
+    console.log("🔄 从 Telegram WebApp API 获取 initData");
     return window.Telegram.WebApp.initData;
   }
 
@@ -166,7 +180,22 @@ export function getTelegramInitData(): string | null {
   const urlParams = new URLSearchParams(window.location.search);
   const initDataFromUrl = urlParams.get("tgWebAppData");
   if (initDataFromUrl) {
-    return initDataFromUrl;
+    console.log("🔄 从 URL 参数获取 initData");
+    // URL参数已经被URLSearchParams自动解码一次了
+    // 检查是否需要再次解码（如果数据仍然包含%编码）
+    try {
+      if (initDataFromUrl.includes("%")) {
+        console.log("⚠️ 检测到URL编码字符，尝试解码");
+        const decoded = decodeURIComponent(initDataFromUrl);
+        console.log("🔍 解码前:", initDataFromUrl.substring(0, 100) + "...");
+        console.log("🔍 解码后:", decoded.substring(0, 100) + "...");
+        return decoded;
+      }
+      return initDataFromUrl;
+    } catch (e) {
+      console.warn("⚠️ URL解码失败，使用原始数据:", e);
+      return initDataFromUrl;
+    }
   }
 
   return null;
