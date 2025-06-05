@@ -297,6 +297,43 @@ export default function DebugPage() {
                 ? "✅ 可用"
                 : "❌ 不可用"}
             </div>
+            {typeof window !== "undefined" && window.Telegram?.WebApp && (
+              <div className="pl-4 space-y-1">
+                <div>
+                  InitData 存在: {window.Telegram.WebApp.initData ? "✅" : "❌"}
+                </div>
+                <div>
+                  InitData 长度: {window.Telegram.WebApp.initData?.length || 0}{" "}
+                  字符
+                </div>
+                <div>
+                  包含 hash:{" "}
+                  {window.Telegram.WebApp.initData?.includes("hash=")
+                    ? "✅"
+                    : "❌"}
+                </div>
+                <div>
+                  包含 auth_date:{" "}
+                  {window.Telegram.WebApp.initData?.includes("auth_date=")
+                    ? "✅"
+                    : "❌"}
+                </div>
+                <div>
+                  字段数量:{" "}
+                  {window.Telegram.WebApp.initData?.split("&").length || 0}
+                </div>
+                {window.Telegram.WebApp.initData && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer font-medium">
+                      查看完整 initData
+                    </summary>
+                    <pre className="mt-1 p-2 bg-blue-100 rounded text-xs break-all">
+                      {window.Telegram.WebApp.initData}
+                    </pre>
+                  </details>
+                )}
+              </div>
+            )}
             <div>当前时间: {new Date().toISOString()}</div>
             {envCheck && (
               <div>

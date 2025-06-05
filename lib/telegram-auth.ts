@@ -172,8 +172,18 @@ export function getTelegramInitData(): string | null {
 
   // 优先从 Telegram WebApp API 获取
   if (window.Telegram?.WebApp?.initData) {
+    const rawData = window.Telegram.WebApp.initData;
     console.log("🔄 从 Telegram WebApp API 获取 initData");
-    return window.Telegram.WebApp.initData;
+    console.log("📊 原始数据统计:", {
+      length: rawData.length,
+      containsHash: rawData.includes("hash="),
+      containsAuthDate: rawData.includes("auth_date="),
+      containsQueryId: rawData.includes("query_id="),
+      fieldCount: rawData.split("&").length,
+      firstPart: rawData.substring(0, 200) + "...",
+      lastPart: "..." + rawData.substring(rawData.length - 200),
+    });
+    return rawData;
   }
 
   // 从 URL 参数获取（作为备用方案）
@@ -181,6 +191,14 @@ export function getTelegramInitData(): string | null {
   const initDataFromUrl = urlParams.get("tgWebAppData");
   if (initDataFromUrl) {
     console.log("🔄 从 URL 参数获取 initData");
+    console.log("📊 URL数据统计:", {
+      length: initDataFromUrl.length,
+      containsHash: initDataFromUrl.includes("hash="),
+      containsAuthDate: initDataFromUrl.includes("auth_date="),
+      containsQueryId: initDataFromUrl.includes("query_id="),
+      fieldCount: initDataFromUrl.split("&").length,
+    });
+
     // URL参数已经被URLSearchParams自动解码一次了
     // 检查是否需要再次解码（如果数据仍然包含%编码）
     try {
@@ -198,6 +216,7 @@ export function getTelegramInitData(): string | null {
     }
   }
 
+  console.warn("❌ 无法获取 initData - 不在 Telegram 环境中");
   return null;
 }
 
