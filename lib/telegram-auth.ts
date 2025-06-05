@@ -23,6 +23,7 @@ export interface TelegramInitData {
 
 /**
  * 验证 Telegram InitData 的真实性
+ * 根据 Telegram 官方文档：https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
  * @param initData - 从 Telegram WebApp 获取的初始化数据字符串
  * @param botToken - Telegram Bot Token
  * @returns 验证结果和解析后的数据
@@ -50,20 +51,40 @@ export function validateTelegramInitData(
     console.log("🔍 开始验证 InitData:", {
       initDataLength: initData.length,
       botTokenPrefix: botToken.substring(0, 15) + "...",
-      containsPercent: initData.includes("%"),
-      containsBackslash: initData.includes("\\"),
       sampleData: initData.substring(0, 200) + "...",
     });
 
-    // 手动解析参数（避免自动解码）
-    const pairs = initData.split("&");
-    const data: Record<string, any> = {};
+    // 检测并处理多重URL编码问题
+    let processedInitData = initData;
 
-    // 收集所有参数，保持原始编码
-    for (const pair of pairs) {
-      const [key, value] = pair.split("=", 2);
+    // 如果包含 %26 或 %3D，说明可能被多重编码了
+    if (initData.includes("%26") || initData.includes("%3D")) {
+      console.log("🔧 检测到多重编码，进行预处理...");
+      try {
+        processedInitData = decodeURIComponent(initData);
+        console.log(
+          "🔧 预解码完成，长度从",
+          initData.length,
+          "变为",
+          processedInitData.length
+        );
+      } catch (e) {
+        console.warn("⚠️ 预解码失败，使用原始数据:", e);
+        processedInitData = initData;
+      }
+    }
+
+    // 按照 Telegram 官方文档正确解析参数
+    // 重要：不要对整个 initData 进行 decodeURIComponent，而是分别处理每个参数
+    const urlParams = new URLSearchParams(processedInitData);
+    const data: Record<string, string> = {};
+
+    // 收集所有参数，保持 URLSearchParams 解析后的状态
+    for (const [key, value] of urlParams.entries()) {
       data[key] = value;
     }
+
+    console.log("📋 解析到的参数:", Object.keys(data));
 
     // 提取并验证 hash
     const receivedHash = data.hash;
@@ -71,29 +92,21 @@ export function validateTelegramInitData(
       return { isValid: false, error: "缺少hash参数" };
     }
 
-    // 移除 hash 和 signature 参数
-    delete data.hash;
-    delete data.signature;
+    // 移除 hash 和 signature 参数（根据Telegram官方文档）
+    const dataForCheck = { ...data };
+    delete dataForCheck.hash;
+    delete dataForCheck.signature; // Telegram官方文档要求排除signature参数
 
     // 按字母顺序排序参数并构建数据检查字符串
-    const dataCheckString = Object.keys(data)
+    // 重要：这里使用的是 URLSearchParams 已经解析的值，符合 Telegram 规范
+    const dataCheckString = Object.keys(dataForCheck)
       .sort()
-      .map((key) => `${key}=${data[key]}`)
+      .map((key) => `${key}=${dataForCheck[key]}`)
       .join("\n");
 
-    console.log("🔧 数据检查字符串:", dataCheckString);
+    console.log("🔧 数据检查字符串:\n", dataCheckString);
 
-    // 调试user字段编码
-    if (data.user) {
-      console.log("👤 User字段调试:", {
-        rawUser: data.user,
-        containsBackslash: data.user.includes("\\"),
-        containsPercent: data.user.includes("%"),
-        length: data.user.length,
-      });
-    }
-
-    // 按照 Telegram 官方文档计算 hash（使用 node 原生 crypto）
+    // 按照 Telegram 官方文档计算 hash
     // 1. secret_key = HMAC-SHA256("WebAppData", botToken)
     const secretKey = crypto
       .createHmac("sha256", botToken)
@@ -103,7 +116,7 @@ export function validateTelegramInitData(
     // 2. hash = HMAC-SHA256(data_check_string, secret_key)
     const expectedHash = crypto
       .createHmac("sha256", secretKey)
-      .update(dataCheckString)
+      .update(dataCheckString, "utf8")
       .digest("hex");
 
     console.log("🔑 Hash比较:", {
@@ -121,16 +134,26 @@ export function validateTelegramInitData(
           receivedHash,
           expectedHash,
           dataCheckString,
+          paramCount: Object.keys(dataForCheck).length,
           suggestion: "请检查Bot Token是否正确，或尝试重新打开应用",
         },
       };
     }
 
     // 验证时间戳
-    const authDate = data.auth_date;
+    const authDate = parseInt(data.auth_date);
     if (isNaN(authDate)) {
       return { isValid: false, error: "无效的auth_date" };
     }
+
+    // 验证是否在24小时内（可选）
+    const now = Math.floor(Date.now() / 1000);
+    const timeDiff = now - authDate;
+    if (timeDiff > 86400) {
+      // 24小时 = 86400秒
+      console.warn("⚠️ InitData 超过24小时，但仍然验证通过");
+    }
+
     console.log("✅ InitData验证成功");
 
     // 解析 user 字段为对象
@@ -280,36 +303,48 @@ export function parseInitData(initData: string): TelegramInitData | null {
  * @param botToken - Telegram Bot Token
  */
 export function checkTelegramHashDebug(initData: string, botToken: string) {
-  const pairs = initData.split("&");
-  const data: Record<string, any> = {};
-  for (const pair of pairs) {
-    const [key, value] = pair.split("=", 2);
+  // 使用与主验证函数相同的逻辑
+  const urlParams = new URLSearchParams(initData);
+  const data: Record<string, string> = {};
+
+  for (const [key, value] of urlParams.entries()) {
     data[key] = value;
   }
+
   const receivedHash = data.hash;
   delete data.hash;
-  delete data.signature; // 移除 signature 字段
+  delete data.signature; // Telegram官方文档要求排除signature参数
+
   const dataCheckString = Object.keys(data)
     .sort()
     .map((key) => `${key}=${data[key]}`)
     .join("\n");
+
   const secretKey = crypto
     .createHmac("sha256", botToken)
     .update("WebAppData")
     .digest();
+
   const expectedHash = crypto
     .createHmac("sha256", secretKey)
-    .update(dataCheckString)
+    .update(dataCheckString, "utf8")
     .digest("hex");
+
   console.log("【DEBUG】dataCheckString:\n", dataCheckString);
   console.log("【DEBUG】secretKey (hex):", secretKey.toString("hex"));
   console.log("【DEBUG】expectedHash:", expectedHash);
   console.log("【DEBUG】receivedHash:", receivedHash);
+  console.log("【DEBUG】参数数量:", Object.keys(data).length);
+
   if (expectedHash === receivedHash) {
     console.log("✅ Hash 校验通过");
     return true;
   } else {
     console.log("❌ Hash 校验失败");
+    console.log("【DEBUG】可能的原因:");
+    console.log("1. Bot Token 不正确");
+    console.log("2. InitData 被修改或损坏");
+    console.log("3. 参数编码处理不当");
     return false;
   }
 }
