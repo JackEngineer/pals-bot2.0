@@ -113,7 +113,7 @@ export function validateTelegramInitData(
     }
 
     // 验证时间戳
-    const authDate = parseInt(data.auth_date);
+    const authDate = data.auth_date;
     if (isNaN(authDate)) {
       return { isValid: false, error: "无效的auth_date" };
     }
@@ -183,7 +183,7 @@ export function parseInitData(initData: string): TelegramInitData | null {
       if (key === "user") {
         result[key] = JSON.parse(value);
       } else if (key === "auth_date") {
-        result[key] = parseInt(value);
+        result[key] = value;
       } else {
         result[key] = value;
       }
