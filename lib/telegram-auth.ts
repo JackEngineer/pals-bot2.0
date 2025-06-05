@@ -32,7 +32,6 @@ export function validateTelegramInitData(
   botToken: string
 ): { isValid: boolean; data?: TelegramInitData; error?: string; debug?: any } {
   try {
-    window.alert(initData);
     if (!initData) {
       return { isValid: false, error: "缺少InitData参数" };
     }
