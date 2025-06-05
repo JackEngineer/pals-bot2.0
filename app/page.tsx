@@ -108,11 +108,17 @@ export default function Home() {
                 ) {
                   const initData = window.Telegram.WebApp.initData;
                   if (initData) {
-                    // 使用 localStorage 传递完整 initData
-                    localStorage.setItem("tg_init_data", initData);
+                    // 通过URL参数传递initData到调试页面
+                    const debugUrl = `/debug?tgWebAppData=${encodeURIComponent(
+                      initData
+                    )}`;
+                    window.open(debugUrl, "_blank");
+                  } else {
+                    window.open("/debug", "_blank");
                   }
+                } else {
+                  window.open("/debug", "_blank");
                 }
-                window.open("/debug", "_blank");
               }}
               className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors"
               title="打开调试页面"

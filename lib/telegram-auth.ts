@@ -156,22 +156,16 @@ export function validateTelegramInitData(
 export function getTelegramInitData(): string | null {
   if (typeof window === "undefined") return null;
 
-  // 优先从 localStorage 获取（避免 URL 长度限制）
-  const initDataFromStorage = localStorage.getItem("tg_init_data");
-  if (initDataFromStorage) {
-    return initDataFromStorage;
+  // 优先从 Telegram WebApp API 获取
+  if (window.Telegram?.WebApp?.initData) {
+    return window.Telegram.WebApp.initData;
   }
 
-  // 从 URL 参数获取
+  // 从 URL 参数获取（作为备用方案）
   const urlParams = new URLSearchParams(window.location.search);
   const initDataFromUrl = urlParams.get("tgWebAppData");
   if (initDataFromUrl) {
-    return initDataFromUrl; // 直接返回，不再解码
-  }
-
-  // 从 Telegram WebApp API 获取
-  if (window.Telegram?.WebApp?.initData) {
-    return window.Telegram.WebApp.initData;
+    return initDataFromUrl;
   }
 
   return null;
