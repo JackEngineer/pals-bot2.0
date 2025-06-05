@@ -89,8 +89,8 @@ export function validateTelegramInitData(
     console.log("🔧 数据检查字符串:", dataCheckString);
 
     // 按照 Telegram 官方文档计算 hash
-    // 1. secret_key = HMAC-SHA256(bot_token, "WebAppData")
-    const secretKey = CryptoJS.HmacSHA256(botToken, "WebAppData");
+    // 1. secret_key = HMAC-SHA256("WebAppData", botToken)
+    const secretKey = CryptoJS.HmacSHA256("WebAppData", botToken);
 
     // 2. hash = HMAC-SHA256(data_check_string, secret_key)
     const expectedHash = CryptoJS.HmacSHA256(
