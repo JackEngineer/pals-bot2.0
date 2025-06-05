@@ -32,6 +32,7 @@ export function validateTelegramInitData(
   botToken: string
 ): { isValid: boolean; data?: TelegramInitData; error?: string; debug?: any } {
   try {
+    window.alert(initData);
     if (!initData) {
       return { isValid: false, error: "缺少InitData参数" };
     }
@@ -123,7 +124,6 @@ export function validateTelegramInitData(
     if (isNaN(authDate)) {
       return { isValid: false, error: "无效的auth_date" };
     }
-
     console.log("✅ InitData验证成功");
 
     return {

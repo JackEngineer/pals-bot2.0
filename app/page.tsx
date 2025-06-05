@@ -101,7 +101,19 @@ export default function Home() {
             <div></div>
             <h1 className="text-2xl font-bold text-blue-800">🍃 漂流瓶 🍃</h1>
             <button
-              onClick={() => window.open("/debug", "_blank")}
+              onClick={() => {
+                let url = "/debug";
+                if (
+                  typeof window !== "undefined" &&
+                  window.Telegram?.WebApp?.initData
+                ) {
+                  const initData = window.Telegram.WebApp.initData;
+                  if (initData) {
+                    url += `?initData=${encodeURIComponent(initData)}`;
+                  }
+                }
+                window.open(url, "_blank");
+              }}
               className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors"
               title="打开调试页面"
             >
