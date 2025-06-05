@@ -58,17 +58,7 @@ export function validateTelegramInitData(
 
     // 收集所有参数
     for (const [key, value] of urlParams.entries()) {
-      if (key === "user") {
-        // 解析用户数据
-        try {
-          data[key] = JSON.parse(value);
-        } catch (e) {
-          console.error("❌ 解析用户数据失败:", e);
-          return { isValid: false, error: "用户数据格式错误" };
-        }
-      } else {
-        data[key] = value;
-      }
+      data[key] = value; // 全部保留原始字符串
     }
 
     // 提取并验证 hash
@@ -125,10 +115,22 @@ export function validateTelegramInitData(
     }
     console.log("✅ InitData验证成功");
 
+    // 解析 user 字段为对象
+    let userObj: TelegramUser | undefined = undefined;
+    if (data.user) {
+      try {
+        userObj = JSON.parse(data.user);
+      } catch (e) {
+        console.error("❌ 解析用户数据失败:", e);
+        return { isValid: false, error: "用户数据格式错误" };
+      }
+    }
+
     return {
       isValid: true,
       data: {
         ...data,
+        user: userObj,
         hash: receivedHash,
         auth_date: authDate,
       } as TelegramInitData,
