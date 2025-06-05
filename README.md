@@ -211,60 +211,123 @@ npx prisma db push --accept-data-loss
 
 本项目实现了完整的 Telegram InitData 验证系统，确保用户身份的真实性和数据的安全性。
 
+#### 核心组件
+
+1. **验证工具库** (`lib/telegram-auth.ts`)
+
+   - InitData 解析和验证
+   - HMAC-SHA256 签名验证
+   - 时间戳有效性检查
+
+2. **API 路由** (`app/api/auth/telegram/route.ts`)
+
+   - RESTful 身份验证端点
+   - 环境变量配置检查
+   - 详细的错误响应
+
+3. **React Hook** (`hooks/useTelegramAuth.ts`)
+
+   - 自动身份验证
+   - 状态管理
+   - 错误处理
+
+4. **UI 组件** (`components/TelegramAuth.tsx`)
+   - 美观的认证状态展示
+   - 用户信息显示
+   - 交互式操作
+
 #### 验证流程
 
 ```typescript
 // 1. 核心验证函数
-import { validateTelegramInitData } from "@/lib/telegram-auth";
+import { verifyTelegramAuth } from "@/lib/telegram-auth";
 
-export async function verifyTelegramUser(initData: string) {
+export async function authenticateUser(initData: string) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN!;
-  const validation = validateTelegramInitData(initData, botToken);
+  const result = verifyTelegramAuth(initData, botToken);
 
-  if (!validation.isValid) {
-    throw new Error(`认证失败: ${validation.error}`);
+  if (!result.isValid) {
+    throw new Error(result.error || "认证失败");
   }
 
-  return validation.data;
+  return result.user;
 }
 
 // 2. API 路由验证
 // /app/api/auth/telegram/route.ts
 export async function POST(request: NextRequest) {
   const { initData } = await request.json();
-  const validation = validateTelegramInitData(initData, botToken);
+  const verification = verifyTelegramAuth(initData, botToken);
 
-  if (!validation.isValid) {
-    return NextResponse.json({ error: validation.error }, { status: 401 });
+  if (!verification.isValid) {
+    return NextResponse.json(
+      {
+        error: verification.error,
+      },
+      { status: 401 }
+    );
   }
 
   return NextResponse.json({
     success: true,
-    user: validation.data?.user,
-    authDate: validation.data?.auth_date,
+    user: verification.user,
+    message: "身份验证成功",
   });
 }
 
 // 3. 前端 Hook 使用
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 
-function MyComponent() {
-  const { isAuthenticated, user, error, authenticate } = useTelegramAuth();
+function AuthComponent() {
+  const {
+    isLoading,
+    isAuthenticated,
+    user,
+    error,
+    authenticate,
+    logout,
+    clearError,
+  } = useTelegramAuth();
 
   if (isAuthenticated) {
-    return <div>欢迎, {user?.first_name}!</div>;
+    return (
+      <div>
+        <h1>欢迎, {user?.first_name}!</h1>
+        <button onClick={logout}>登出</button>
+      </div>
+    );
   }
 
   return <div>认证失败: {error}</div>;
+}
+
+// 4. 使用认证组件
+import TelegramAuth from "@/components/TelegramAuth";
+
+function App() {
+  return (
+    <div>
+      <TelegramAuth />
+    </div>
+  );
 }
 ```
 
 #### 安全特性
 
-- **HMAC-SHA256 验证**: 使用 Telegram Bot Token 验证数据完整性
-- **时间戳检查**: 防止重放攻击，默认 24 小时有效期
-- **数据解析验证**: 严格验证 InitData 格式和内容
-- **错误处理**: 详细的错误信息便于调试和安全监控
+- **HMAC-SHA256 验证**: 使用 Telegram Bot Token 验证数据完整性和来源
+- **时间戳检查**: 防止重放攻击，默认 5 分钟有效期（可配置）
+- **数据解析验证**: 严格验证 InitData 格式和必要字段
+- **错误处理**: 详细的错误分类和用户友好的提示信息
+- **类型安全**: 完整的 TypeScript 类型定义
+
+#### 功能特点
+
+- **自动认证**: 应用启动时自动获取 Telegram InitData 并验证
+- **手动重试**: 提供重新认证和错误清除功能
+- **美观界面**: 响应式设计，适配移动端和桌面端
+- **状态管理**: 完整的加载、成功、失败状态处理
+- **用户信息**: 展示头像、姓名、用户名等完整信息
 
 #### 开发测试
 
@@ -277,6 +340,14 @@ npm run dev
 # 访问测试页面
 http://localhost:3000/test
 ```
+
+测试页面功能：
+
+- **自动认证状态检查**: 实时显示当前认证状态
+- **手动测试**: 支持输入自定义 InitData 进行测试
+- **模拟数据**: 生成测试用的模拟 InitData
+- **API 文档**: 显示详细的 API 端点信息
+- **环境检查**: 检测 Telegram WebApp SDK 加载状态
 
 ### 用户认证安全
 
