@@ -7,10 +7,23 @@ declare global {
   interface Window {
     Telegram: {
       WebApp: {
-        initData: string;
-        initDataUnsafe: any;
         ready: () => void;
         expand: () => void;
+        MainButton: {
+          setText: (text: string) => void;
+          show: () => void;
+          hide: () => void;
+          onClick: (callback: () => void) => void;
+        };
+        initData: string;
+        initDataUnsafe: {
+          user?: {
+            id: number;
+            first_name: string;
+            username?: string;
+          };
+        };
+        themeParams: any;
       };
     };
   }

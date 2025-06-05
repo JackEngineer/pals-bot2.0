@@ -17,6 +17,7 @@ declare global {
           hide: () => void;
           onClick: (callback: () => void) => void;
         };
+        initData: string;
         initDataUnsafe: {
           user?: {
             id: number;
