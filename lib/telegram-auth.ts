@@ -1,4 +1,5 @@
 import CryptoJS from "crypto-js";
+import crypto from "crypto";
 
 export interface TelegramUser {
   id: number;
@@ -78,15 +79,18 @@ export function validateTelegramInitData(
 
     console.log("🔧 数据检查字符串:", dataCheckString);
 
-    // 按照 Telegram 官方文档计算 hash
+    // 按照 Telegram 官方文档计算 hash（使用 node 原生 crypto）
     // 1. secret_key = HMAC-SHA256("WebAppData", botToken)
-    const secretKey = CryptoJS.HmacSHA256("WebAppData", botToken);
+    const secretKey = crypto
+      .createHmac("sha256", botToken)
+      .update("WebAppData")
+      .digest();
 
     // 2. hash = HMAC-SHA256(data_check_string, secret_key)
-    const expectedHash = CryptoJS.HmacSHA256(
-      dataCheckString,
-      secretKey
-    ).toString(CryptoJS.enc.Hex);
+    const expectedHash = crypto
+      .createHmac("sha256", secretKey)
+      .update(dataCheckString)
+      .digest("hex");
 
     console.log("🔑 Hash比较:", {
       received: receivedHash,
