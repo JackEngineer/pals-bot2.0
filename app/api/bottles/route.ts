@@ -1,20 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bottleOperations, userOperations } from "@/lib/prisma";
+import { createBottle } from "@/lib/database/bottles";
 import { z } from "zod";
-
-// 创建漂流瓶的请求体验证 schema
-const CreateBottleSchema = z.object({
-  content: z.string().min(1, "内容不能为空").max(1000, "内容不能超过1000字符"),
-  mediaType: z.enum(["TEXT", "IMAGE", "AUDIO"]).optional().default("TEXT"),
-  mediaUrl: z.string().url().optional(),
-  bottleStyle: z
-    .object({
-      color: z.string(),
-      pattern: z.string(),
-      decoration: z.string(),
-    })
-    .optional(),
-});
 
 // GET /api/bottles - 获取随机漂流瓶
 export async function GET(request: NextRequest) {
@@ -81,55 +68,51 @@ export async function GET(request: NextRequest) {
 // POST /api/bottles - 创建新漂流瓶
 export async function POST(request: NextRequest) {
   try {
-    // 1. 认证：从 header 获取 Telegram InitData
-    const authHeader = request.headers.get("Authorization");
-    if (!authHeader) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "UNAUTHORIZED",
-          message: "未提供认证信息",
-          timestamp: new Date().toISOString(),
-        },
-        { status: 401 }
-      );
-    }
-    const initData = authHeader.replace("Bearer ", "");
-    const { verifyTelegramAuth } = await import("@/lib/telegram-auth");
-    const botToken = process.env.TELEGRAM_BOT_TOKEN!;
-    const validation = verifyTelegramAuth(initData, botToken);
-    if (!validation.isValid || !validation.user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "INVALID_AUTH",
-          message: validation.error || "认证失败",
-          timestamp: new Date().toISOString(),
-        },
-        { status: 401 }
-      );
-    }
-    // 2. 获取/创建用户
-    const user = await userOperations.upsertByTelegramId(validation.user);
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "USER_NOT_FOUND",
-          message: "用户不存在",
-          timestamp: new Date().toISOString(),
-        },
-        { status: 404 }
-      );
-    }
+    // // 1. 认证：从 header 获取 Telegram InitData
+    // const authHeader = request.headers.get("Authorization");
+    // if (!authHeader) {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       error: "UNAUTHORIZED",
+    //       message: "未提供认证信息",
+    //       timestamp: new Date().toISOString(),
+    //     },
+    //     { status: 401 }
+    //   );
+    // }
+    // const initData = authHeader.replace("Bearer ", "");
+    // const { verifyTelegramAuth } = await import("@/lib/telegram-auth");
+    // const botToken = process.env.TELEGRAM_BOT_TOKEN!;
+    // const validation = verifyTelegramAuth(initData, botToken);
+    // if (!validation.isValid || !validation.user) {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       error: "INVALID_AUTH",
+    //       message: validation.error || "认证失败",
+    //       timestamp: new Date().toISOString(),
+    //     },
+    //     { status: 401 }
+    //   );
+    // }
+    // // 2. 获取/创建用户
+    // const user = await userOperations.upsertByTelegramId(validation.user);
+    // if (!user) {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       error: "USER_NOT_FOUND",
+    //       message: "用户不存在",
+    //       timestamp: new Date().toISOString(),
+    //     },
+    //     { status: 404 }
+    //   );
+    // }
     // 3. 解析请求体并校验
     const body = await request.json();
-    const validatedData = CreateBottleSchema.parse(body);
     // 4. 创建漂流瓶
-    const bottle = await bottleOperations.create({
-      ...validatedData,
-      userId: user.id,
-    });
+    const bottle = await createBottle(body);
     // 5. 返回成功响应
     return NextResponse.json(
       {
@@ -148,6 +131,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    console.log(error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {

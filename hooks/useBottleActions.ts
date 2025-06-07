@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useTelegramAuth } from "./useTelegramAuth";
+import { post } from "@/lib/request";
+import { useUserStore } from "./useUserStore";
 
 export function useBottleActions() {
   const [loading, setLoading] = useState(false);
 
-  const { isAuthenticated, user } = useTelegramAuth();
+  const { isAuthenticated } = useTelegramAuth();
+  const user = useUserStore((state) => state.user);
 
   // 扔瓶子
   const throwBottle = async (
@@ -13,12 +16,18 @@ export function useBottleActions() {
     mediaUrl: string,
     bottleStyle: any
   ) => {
-    console.log(content, mediaType, mediaUrl, bottleStyle);
     setLoading(true);
+    if (!isAuthenticated || !user) return;
     try {
-      console.log(isAuthenticated, user);
-      // ...API 调用逻辑（如前面写的 fetch）...
-      // 返回结果
+      const payload = {
+        content,
+        mediaType,
+        mediaUrl,
+        bottleStyle,
+        userId: user.id,
+      };
+      const data = await post(`/api/bottles`, payload);
+      return data;
     } finally {
       setLoading(false);
     }

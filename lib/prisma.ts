@@ -62,8 +62,8 @@ export const userOperations = {
 export const bottleOperations = {
   // 创建新漂流瓶
   async create(data: {
-    content: string;
     userId: string;
+    content: string;
     mediaType?: "TEXT" | "IMAGE" | "AUDIO";
     mediaUrl?: string;
     bottleStyle?: any;

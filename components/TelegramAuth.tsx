@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useUserActions } from "@/hooks/useUserActions";
+import { useUserStore } from "@/hooks/useUserStore";
+import { UserInfo } from "@/hooks/useUserStore";
 
 interface TelegramAuthProps {
   onAuthSuccess?: () => void;
@@ -22,6 +24,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
     isDevelopmentMode,
   } = useTelegramAuth();
   const { checkUser, loading } = useUserActions();
+  const setUser = useUserStore((state) => state.setUser);
 
   useEffect(() => {
     if (isAuthenticated && onAuthSuccess) {
@@ -33,6 +36,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
     if (loading) return;
     const userInfo = await checkUser(user!);
     if (!userInfo) return;
+    setUser(userInfo as UserInfo);
     router.push("/home");
   };
 
