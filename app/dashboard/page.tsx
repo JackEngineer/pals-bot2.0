@@ -16,8 +16,8 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-100 to-purple-200 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen bg-ocean-light ocean-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-500"></div>
       </div>
     );
   }
@@ -27,31 +27,34 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-100 to-purple-200 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-ocean-light ocean-background p-4">
+      {/* 海洋波纹背景层 */}
+      <div className="absolute inset-0 bg-water-ripple opacity-20"></div>
+
+      <div className="relative z-10 max-w-4xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+        <div className="bottle-card rounded-2xl p-6 mb-6 animate-float">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               {user.photo_url && (
                 <img
                   src={user.photo_url}
                   alt={user.first_name}
-                  className="h-16 w-16 rounded-full border-4 border-purple-200"
+                  className="h-16 w-16 rounded-full border-4 border-ocean-200"
                 />
               )}
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-ocean-900">
                   欢迎，{user.first_name} {user.last_name || ""}！
                 </h1>
                 {user.username && (
-                  <p className="text-gray-600">@{user.username}</p>
+                  <p className="text-ocean-600">@{user.username}</p>
                 )}
               </div>
             </div>
             <button
               onClick={() => router.push("/")}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="btn-ocean px-4 py-2 rounded-lg ripple-effect"
             >
               返回首页
             </button>
@@ -61,11 +64,14 @@ export default function Dashboard() {
         {/* Main Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* 漂流瓶功能 */}
-          <div className="bg-white rounded-2xl shadow-xl p-6">
+          <div
+            className="bottle-card rounded-2xl p-6 animate-float"
+            style={{ animationDelay: "0.2s" }}
+          >
             <div className="flex items-center mb-4">
-              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="h-12 w-12 bg-ocean-100 rounded-full flex items-center justify-center">
                 <svg
-                  className="h-6 w-6 text-blue-600"
+                  className="h-6 w-6 text-ocean-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -78,24 +84,27 @@ export default function Dashboard() {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 ml-3">
+              <h2 className="text-xl font-semibold text-ocean-900 ml-3">
                 发送漂流瓶
               </h2>
             </div>
-            <p className="text-gray-600 mb-4">
+            <p className="text-ocean-700 mb-4">
               将你的想法装进漂流瓶，让它漂向远方
             </p>
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+            <button className="w-full bg-ocean-500 hover:bg-ocean-600 text-white py-2 px-4 rounded-lg transition-colors">
               写一个漂流瓶
             </button>
           </div>
 
           {/* 接收漂流瓶 */}
-          <div className="bg-white rounded-2xl shadow-xl p-6">
+          <div
+            className="bottle-card rounded-2xl p-6 animate-float"
+            style={{ animationDelay: "0.4s" }}
+          >
             <div className="flex items-center mb-4">
-              <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="h-12 w-12 bg-aqua-100 rounded-full flex items-center justify-center">
                 <svg
-                  className="h-6 w-6 text-green-600"
+                  className="h-6 w-6 text-aqua-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -108,24 +117,27 @@ export default function Dashboard() {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 ml-3">
+              <h2 className="text-xl font-semibold text-ocean-900 ml-3">
                 捡漂流瓶
               </h2>
             </div>
-            <p className="text-gray-600 mb-4">
+            <p className="text-ocean-700 mb-4">
               看看海边冲上来了什么有趣的漂流瓶
             </p>
-            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors">
+            <button className="w-full bg-aqua-500 hover:bg-aqua-600 text-white py-2 px-4 rounded-lg transition-colors">
               去海边捡瓶子
             </button>
           </div>
 
           {/* 我的漂流瓶 */}
-          <div className="bg-white rounded-2xl shadow-xl p-6">
+          <div
+            className="bottle-card rounded-2xl p-6 animate-float"
+            style={{ animationDelay: "0.6s" }}
+          >
             <div className="flex items-center mb-4">
-              <div className="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center">
+              <div className="h-12 w-12 bg-deepblue-100 rounded-full flex items-center justify-center">
                 <svg
-                  className="h-6 w-6 text-yellow-600"
+                  className="h-6 w-6 text-deepblue-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -138,36 +150,41 @@ export default function Dashboard() {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 ml-3">
+              <h2 className="text-xl font-semibold text-ocean-900 ml-3">
                 我的记录
               </h2>
             </div>
-            <p className="text-gray-600 mb-4">查看你发送的和收到的漂流瓶</p>
-            <button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg transition-colors">
+            <p className="text-ocean-700 mb-4">查看你发送的和收到的漂流瓶</p>
+            <button className="w-full bg-deepblue-500 hover:bg-deepblue-600 text-white py-2 px-4 rounded-lg transition-colors">
               查看记录
             </button>
           </div>
         </div>
 
         {/* 统计信息 */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mt-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">使用统计</h2>
+        <div
+          className="bottle-card rounded-2xl p-6 mt-6 animate-float"
+          style={{ animationDelay: "0.8s" }}
+        >
+          <h2 className="text-xl font-semibold text-ocean-900 mb-4">
+            使用统计
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">0</div>
-              <div className="text-sm text-gray-600">发送的瓶子</div>
+            <div className="text-center p-4 bg-ocean-50 rounded-xl">
+              <div className="text-2xl font-bold text-ocean-600">0</div>
+              <div className="text-sm text-ocean-700">发送的瓶子</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">0</div>
-              <div className="text-sm text-gray-600">收到的瓶子</div>
+            <div className="text-center p-4 bg-aqua-50 rounded-xl">
+              <div className="text-2xl font-bold text-aqua-600">0</div>
+              <div className="text-sm text-aqua-700">收到的瓶子</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">0</div>
-              <div className="text-sm text-gray-600">获得的回复</div>
+            <div className="text-center p-4 bg-deepblue-50 rounded-xl">
+              <div className="text-2xl font-bold text-deepblue-600">0</div>
+              <div className="text-sm text-deepblue-700">获得的回复</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">0</div>
-              <div className="text-sm text-gray-600">海洋里的瓶子</div>
+            <div className="text-center p-4 bg-ocean-100 rounded-xl">
+              <div className="text-2xl font-bold text-ocean-700">0</div>
+              <div className="text-sm text-ocean-800">海洋里的瓶子</div>
             </div>
           </div>
         </div>

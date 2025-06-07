@@ -4,27 +4,30 @@ import TelegramAuth from "@/components/TelegramAuth";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-ocean-light ocean-background">
+      {/* 海洋波纹背景层 */}
+      <div className="absolute inset-0 bg-water-ripple opacity-30"></div>
+
       <div className="relative z-10 p-4">
         <div className="max-w-lg mx-auto">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-8 pt-8">
             <div className="mb-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br rounded-2xl shadow-xl mb-4">
-                <img 
-                  src="/logo.png" 
-                  alt="漂流瓶 Logo" 
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-ocean-gradient rounded-2xl shadow-xl mb-4 animate-float">
+                <img
+                  src="/logo.png"
+                  alt="漂流瓶 Logo"
                   className="w-full h-full rounded-xl"
                 />
               </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-ocean-200 bg-clip-text bg-ocean-gradient mb-4">
               漂流瓶
             </h1>
-            <p className="text-lg md:text-xl text-gray-600 mb-6">
+            <p className="text-lg md:text-xl text-ocean-200 mb-6 font-medium">
               遇见有趣的陌生人
             </p>
-            <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
+            <p className="text-sm text-ocean-200 max-w-md mx-auto leading-relaxed">
               将心情装进漂流瓶，投向数字海洋，与世界各地的人匿名分享故事
             </p>
           </div>
@@ -35,17 +38,23 @@ export default function Home() {
           </div>
 
           {/* 简化的特性展示 */}
-          <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-4 mb-8 border border-white/20">
-            <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
-              <div className="flex items-center space-x-2">
+          <div className="bottle-card rounded-2xl p-4 mb-8">
+            <div className="flex items-center justify-center space-x-8 text-sm text-ocean-700">
+              <div className="flex items-center space-x-2 wave-animation">
                 <span className="text-lg">💌</span>
                 <span>发送漂流瓶</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div
+                className="flex items-center space-x-2 wave-animation"
+                style={{ animationDelay: "0.5s" }}
+              >
                 <span className="text-lg">🏖️</span>
                 <span>捞瓶子</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div
+                className="flex items-center space-x-2 wave-animation"
+                style={{ animationDelay: "1s" }}
+              >
                 <span className="text-lg">💬</span>
                 <span>匿名聊天</span>
               </div>
@@ -55,7 +64,7 @@ export default function Home() {
           {/* Footer */}
           <div className="text-center py-6">
             <div className="flex items-center justify-center space-x-4 mb-3">
-              <div className="flex items-center space-x-1 text-xs text-gray-500">
+              <div className="flex items-center space-x-1 text-xs text-ocean-200">
                 <svg
                   className="w-3 h-3"
                   fill="currentColor"
@@ -65,7 +74,7 @@ export default function Home() {
                 </svg>
                 <span>安全</span>
               </div>
-              <div className="flex items-center space-x-1 text-xs text-gray-500">
+              <div className="flex items-center space-x-1 text-xs text-ocean-200">
                 <svg
                   className="w-3 h-3"
                   fill="currentColor"
@@ -75,7 +84,7 @@ export default function Home() {
                 </svg>
                 <span>匿名</span>
               </div>
-              <div className="flex items-center space-x-1 text-xs text-gray-500">
+              <div className="flex items-center space-x-1 text-xs text-ocean-200">
                 <svg
                   className="w-3 h-3"
                   fill="currentColor"
@@ -86,7 +95,7 @@ export default function Home() {
                 <span>有趣</span>
               </div>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-ocean-200">
               © 2024 Pals Bot 2.0 - 让世界变得更有趣一点
             </p>
           </div>

@@ -23,8 +23,8 @@ export default function TelegramAuth() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-6">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-        <p className="text-gray-600">正在验证身份...</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-500 mb-4"></div>
+        <p className="text-ocean-700">正在验证身份...</p>
         {isDevelopmentMode && (
           <div className="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
             🚧 开发模式
@@ -36,7 +36,7 @@ export default function TelegramAuth() {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+      <div className="bottle-card rounded-lg p-6 max-w-md mx-auto border-l-4 border-red-400">
         {isDevelopmentMode && (
           <div className="mb-4 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded text-center">
             🚧 开发模式
@@ -81,7 +81,7 @@ export default function TelegramAuth() {
 
   if (isAuthenticated && user) {
     return (
-      <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 max-w-md mx-auto shadow-lg">
+      <div className="bottle-card rounded-2xl p-6 max-w-md mx-auto shadow-lg border-l-4 border-ocean-400 animate-float">
         {isDevelopmentMode && (
           <div className="mb-4 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded text-center">
             🚧 开发模式
@@ -90,7 +90,7 @@ export default function TelegramAuth() {
         <div className="flex items-center mb-4">
           <div className="flex-shrink-0">
             <svg
-              className="h-6 w-6 text-green-500"
+              className="h-6 w-6 text-ocean-500"
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -102,7 +102,7 @@ export default function TelegramAuth() {
             </svg>
           </div>
           <div className="ml-3">
-            <h3 className="text-lg font-semibold text-green-800">
+            <h3 className="text-lg font-semibold text-ocean-800">
               身份验证成功
             </h3>
           </div>
@@ -114,44 +114,44 @@ export default function TelegramAuth() {
               <img
                 src={user.photo_url}
                 alt={user.first_name}
-                className="h-16 w-16 rounded-full border-3 border-green-200 shadow-md"
+                className="h-16 w-16 rounded-full border-3 border-ocean-200 shadow-md"
               />
             )}
             <div>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-bold text-ocean-900">
                 {user.first_name} {user.last_name || ""}
               </p>
               {user.username && (
-                <p className="text-sm text-gray-600">@{user.username}</p>
+                <p className="text-sm text-ocean-600">@{user.username}</p>
               )}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-4 border border-green-100 shadow-sm">
+          <div className="bg-white/60 backdrop-blur rounded-xl p-4 border border-ocean-200 shadow-sm">
             <dl className="space-y-3">
               <div className="flex justify-between items-center">
-                <dt className="text-sm font-medium text-gray-600">用户 ID:</dt>
-                <dd className="text-sm text-gray-900 font-mono">{user.id}</dd>
+                <dt className="text-sm font-medium text-ocean-700">用户 ID:</dt>
+                <dd className="text-sm text-ocean-900 font-mono">{user.id}</dd>
               </div>
               {user.language_code && (
                 <div className="flex justify-between items-center">
-                  <dt className="text-sm font-medium text-gray-600">语言:</dt>
-                  <dd className="text-sm text-gray-900">
+                  <dt className="text-sm font-medium text-ocean-700">语言:</dt>
+                  <dd className="text-sm text-ocean-900">
                     {user.language_code}
                   </dd>
                 </div>
               )}
               {user.is_premium !== undefined && (
                 <div className="flex justify-between items-center">
-                  <dt className="text-sm font-medium text-gray-600">
+                  <dt className="text-sm font-medium text-ocean-700">
                     Premium:
                   </dt>
-                  <dd className="text-sm text-gray-900">
+                  <dd className="text-sm text-ocean-900">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         user.is_premium
                           ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
+                          : "bg-ocean-100 text-ocean-800"
                       }`}
                     >
                       {user.is_premium ? "是" : "否"}
@@ -165,13 +165,13 @@ export default function TelegramAuth() {
           <div className="flex gap-3">
             <button
               onClick={handleLogin}
-              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl text-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+              className="flex-1 btn-ocean font-semibold py-3 px-6 rounded-xl text-lg ripple-effect"
             >
               🚀 进入应用
             </button>
             <button
               onClick={logout}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-xl text-sm transition-colors"
+              className="bg-ocean-100 hover:bg-ocean-200 text-ocean-700 font-medium py-3 px-4 rounded-xl text-sm transition-colors"
             >
               登出
             </button>
@@ -183,16 +183,16 @@ export default function TelegramAuth() {
 
   // 不在 Telegram 环境中的默认状态
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-blue-50 border border-gray-200 rounded-2xl p-6 max-w-md mx-auto shadow-lg">
+    <div className="bottle-card rounded-2xl p-6 max-w-md mx-auto shadow-lg">
       {isDevelopmentMode && (
         <div className="mb-4 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded text-center">
           🚧 开发模式
         </div>
       )}
       <div className="text-center">
-        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 mb-4">
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-ocean-gradient mb-4 animate-pulse">
           <svg
-            className="h-8 w-8 text-blue-600"
+            className="h-8 w-8 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -201,14 +201,14 @@ export default function TelegramAuth() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 2 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
             />
           </svg>
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-3">
+        <h3 className="text-xl font-semibold text-ocean-900 mb-3">
           {isDevelopmentMode ? "开发模式" : "请在 Telegram 中打开"}
         </h3>
-        <p className="text-sm text-gray-600 leading-relaxed">
+        <p className="text-sm text-ocean-600 leading-relaxed">
           {isDevelopmentMode
             ? "当前运行在开发模式下，将使用模拟的 Telegram 用户数据进行身份验证。"
             : "此应用需要在 Telegram WebApp 环境中运行才能进行身份验证。"}
