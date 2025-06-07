@@ -24,7 +24,7 @@ export default function TelegramAuth() {
     return (
       <div className="flex flex-col items-center justify-center p-6">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-500 mb-4"></div>
-        <p className="text-ocean-700">正在验证身份...</p>
+        <p className="text-ocean-200">正在验证身份...</p>
         {isDevelopmentMode && (
           <div className="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
             🚧 开发模式
@@ -167,7 +167,7 @@ export default function TelegramAuth() {
               onClick={handleLogin}
               className="flex-1 btn-ocean font-semibold py-3 px-6 rounded-xl text-lg ripple-effect"
             >
-              🚀 进入应用
+              进入漂流瓶
             </button>
             <button
               onClick={logout}

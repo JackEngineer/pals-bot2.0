@@ -11,9 +11,9 @@ export default function Home() {
       <div className="relative z-10 p-4">
         <div className="max-w-lg mx-auto">
           {/* Header */}
-          <div className="text-center mb-8 pt-8">
-            <div className="mb-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-ocean-gradient rounded-2xl shadow-xl mb-4 animate-float">
+          <div className="text-center mb-6 pt-6">
+            <div className="mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-ocean-gradient rounded-2xl shadow-xl mb-3 animate-float">
                 <img
                   src="/logo.png"
                   alt="漂流瓶 Logo"
@@ -21,14 +21,11 @@ export default function Home() {
                 />
               </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-ocean-200 bg-clip-text bg-ocean-gradient mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-ocean-200 bg-clip-text bg-ocean-gradient mb-1">
               漂流瓶
             </h1>
-            <p className="text-lg md:text-xl text-ocean-200 mb-6 font-medium">
+            <p className="text-xs md:text-sm text-ocean-200 mb-4 font-normal opacity-80">
               遇见有趣的陌生人
-            </p>
-            <p className="text-sm text-ocean-200 max-w-md mx-auto leading-relaxed">
-              将心情装进漂流瓶，投向数字海洋，与世界各地的人匿名分享故事
             </p>
           </div>
 
