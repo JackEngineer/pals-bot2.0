@@ -11,26 +11,61 @@ alwaysApply: true
 基于 Tailwind CSS 预设色彩，参考 [tailwind.config.js](mdc:tailwind.config.js) 配置：
 
 ```typescript
-// 主要色彩
+// 海洋主题色系
 const colors = {
+  // 主色系 (海洋蓝)
   primary: {
+    50: '#f0f9ff',
+    100: '#e0f2fe',
+    200: '#bae6fd',
+    300: '#7dd3fc',
+    400: '#38bdf8',
+    500: '#0ea5e9',
+    600: '#0284c7',
+    700: '#0369a1',
+    800: '#075985',
+    900: '#0c4a6e',
+  },
+  // 次要色系 (水蓝)
+  secondary: {
+    50: '#ecfeff',
+    100: '#cffafe',
+    200: '#a5f3fc',
+    300: '#67e8f9',
+    400: '#22d3ee',
+    500: '#06b6d4',
+    600: '#0891b2',
+    700: '#0e7490',
+    800: '#155e75',
+    900: '#164e63',
+  },
+  // 深海蓝色系
+  deepblue: {
     50: '#eff6ff',
+    100: '#dbeafe',
+    200: '#bfdbfe',
+    300: '#93c5fd',
+    400: '#60a5fa',
     500: '#3b82f6',
     600: '#2563eb',
     700: '#1d4ed8',
+    800: '#1e40af',
+    900: '#1e3a8a',
   },
-  secondary: {
-    50: '#f8fafc',
-    500: '#64748b',
-    600: '#475569',
-  },
-  accent: {
-    500: '#06b6d4',
-    600: '#0891b2',
-  },
+  // 状态色彩
   success: '#10b981',
   warning: '#f59e0b',
   error: '#ef4444',
+  
+  // Telegram 主题色
+  telegram: {
+    bg: 'var(--tg-theme-bg-color)',
+    text: 'var(--tg-theme-text-color)',
+    hint: 'var(--tg-theme-hint-color)',
+    link: 'var(--tg-theme-link-color)',
+    button: 'var(--tg-theme-button-color)',
+    buttonText: 'var(--tg-theme-button-text-color)',
+  },
 };
 ```
 
@@ -72,13 +107,22 @@ interface ButtonProps {
   onClick?: () => void;
 }
 
-// 使用示例
+// 使用示例 (海洋主题)
 <Button 
   variant="primary" 
   size="md" 
-  className="w-full"
+  className="w-full ocean-button"
 >
   投递漂流瓶
+</Button>
+
+// 海洋主题按钮变体
+<Button className="bg-ocean-500 hover:bg-ocean-600 text-white">
+  发现漂流瓶
+</Button>
+
+<Button className="bg-gradient-to-r from-ocean-400 to-deepblue-500 text-white">
+  投入海洋
 </Button>
 ```
 
@@ -93,9 +137,10 @@ interface BottleCardProps {
 
 // 设计要点：
 // - 圆角: rounded-lg (8px)
-// - 阴影: shadow-md
-// - 边框: border border-gray-200
+// - 阴影: shadow-lg shadow-ocean-500/10
+// - 边框: border border-ocean-200
 // - 内边距: p-6
+// - 海洋主题背景: bg-white/90 backdrop-blur-sm
 ```
 
 ### 输入框组件
@@ -110,10 +155,11 @@ interface InputProps {
 }
 
 // 设计要点：
-// - 边框: border-2 border-gray-300
-// - 聚焦状态: focus:border-primary-500
+// - 边框: border-2 border-ocean-200
+// - 聚焦状态: focus:border-ocean-500 focus:ring-2 focus:ring-ocean-200
 // - 错误状态: border-red-500
 // - 圆角: rounded-md
+// - 海洋主题: placeholder-ocean-400
 ```
 
 ## 布局规范
@@ -212,7 +258,14 @@ export function BottleCardSkeleton() {
 // 加载指示器
 export function LoadingSpinner() {
   return (
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ocean-500"></div>
+  );
+}
+
+// 海洋主题加载指示器
+export function OceanLoadingSpinner() {
+  return (
+    <div className="animate-spin rounded-full h-8 w-8 border-2 border-ocean-200 border-t-ocean-500"></div>
   );
 }
 ```
@@ -222,46 +275,85 @@ export function LoadingSpinner() {
 ### 漂流瓶样式
 ```typescript
 interface BottleStyle {
-  color: 'blue' | 'green' | 'amber' | 'purple' | 'pink';
-  pattern: 'solid' | 'gradient' | 'striped' | 'dotted';
-  decoration: 'none' | 'stars' | 'hearts' | 'waves';
+  color: 'ocean' | 'deepblue' | 'aqua' | 'teal' | 'cyan';
+  pattern: 'solid' | 'gradient' | 'striped' | 'dotted' | 'waves';
+  decoration: 'none' | 'stars' | 'hearts' | 'waves' | 'bubbles';
 }
 
-// 漂流瓶视觉效果
+// 漂流瓶视觉效果 (基于海洋主题)
 const bottleStyles = {
-  blue: 'bg-gradient-to-br from-blue-400 to-blue-600',
-  green: 'bg-gradient-to-br from-green-400 to-green-600',
-  amber: 'bg-gradient-to-br from-amber-400 to-amber-600',
-  purple: 'bg-gradient-to-br from-purple-400 to-purple-600',
-  pink: 'bg-gradient-to-br from-pink-400 to-pink-600',
+  ocean: 'bg-gradient-to-br from-ocean-400 to-ocean-600',
+  deepblue: 'bg-gradient-to-br from-deepblue-400 to-deepblue-600',
+  aqua: 'bg-gradient-to-br from-cyan-400 to-cyan-600',
+  teal: 'bg-gradient-to-br from-teal-400 to-teal-600',
+  cyan: 'bg-gradient-to-br from-cyan-300 to-cyan-500',
+};
+
+// 漂流瓶装饰效果
+const bottleDecorations = {
+  waves: 'bg-gradient-to-r from-transparent via-white/20 to-transparent',
+  bubbles: 'bg-[radial-gradient(circle_at_30%_70%,_rgba(255,255,255,0.3)_2px,_transparent_2px)]',
+  stars: 'bg-[radial-gradient(circle_at_random,_rgba(255,255,255,0.8)_1px,_transparent_1px)]',
+  hearts: 'bg-[url("data:image/svg+xml,...")]', // 心形图案
 };
 ```
 
 ### 海洋主题设计
 ```css
-/* 海洋背景效果 */
+/* 海洋背景效果 (使用配置中的海洋色系) */
 .ocean-background {
-  @apply bg-gradient-to-b from-blue-400 via-blue-500 to-blue-600;
+  @apply bg-ocean-gradient;
   background-image: 
     radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 2px, transparent 2px),
     radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px);
 }
 
+/* 浅色海洋背景 */
+.ocean-light-background {
+  @apply bg-ocean-light;
+}
+
+/* 深海背景效果 */
+.deep-ocean-background {
+  @apply bg-deep-ocean;
+}
+
+/* 水波纹背景 */
+.water-ripple-background {
+  @apply bg-water-ripple;
+}
+
 /* 波浪动效 */
 .wave-animation {
   @apply relative overflow-hidden;
+  animation: wave 3s ease-in-out infinite;
 }
 
-.wave-animation::before {
-  content: '';
-  @apply absolute inset-0 opacity-30;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  animation: wave 2s infinite linear;
+.wave-slow-animation {
+  animation: wave-slow 3s ease-in-out infinite;
 }
 
-@keyframes wave {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+.ripple-animation {
+  animation: ripple 2s linear infinite;
+}
+
+/* 海洋主题的交互效果 */
+.ocean-button {
+  @apply bg-ocean-500 hover:bg-ocean-600 active:bg-ocean-700;
+  @apply text-white font-medium rounded-lg px-4 py-2;
+  @apply transition-colors duration-200;
+  @apply shadow-lg shadow-ocean-500/25;
+}
+
+.ocean-card {
+  @apply bg-white/90 backdrop-blur-sm border border-ocean-200;
+  @apply rounded-xl shadow-lg shadow-ocean-500/10;
+  @apply hover:shadow-xl hover:shadow-ocean-500/20;
+  @apply transition-all duration-300;
 }
 ```
 
@@ -340,16 +432,16 @@ export function ErrorState({
 
 ### 键盘导航
 ```css
-/* 聚焦指示器 */
+/* 聚焦指示器 (海洋主题) */
 .focus-visible {
-  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  @apply outline-none ring-2 ring-ocean-500 ring-offset-2;
 }
 
-/* 跳过链接 */
+/* 跳过链接 (海洋主题) */
 .skip-link {
   @apply sr-only focus:not-sr-only;
   @apply fixed top-4 left-4 z-50;
-  @apply bg-primary-600 text-white px-4 py-2 rounded;
+  @apply bg-ocean-600 text-white px-4 py-2 rounded;
 }
 ```
 
@@ -424,4 +516,16 @@ export function useTheme() {
   
   return { theme, toggleTheme };
 }
+```
+
+### 海洋主题渐变
+```typescript
+// 预定义的海洋主题渐变
+const oceanGradients = {
+  primary: 'bg-ocean-gradient', // 主要海洋渐变
+  light: 'bg-ocean-light',      // 浅色海洋渐变
+  waves: 'bg-ocean-waves',      // 海浪渐变
+  deep: 'bg-deep-ocean',        // 深海渐变
+  ripple: 'bg-water-ripple',    // 水波纹效果
+};
 ```
