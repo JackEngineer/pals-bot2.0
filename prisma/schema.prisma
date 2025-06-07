@@ -10,77 +10,466 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================== 用户相关模型 ====================
+
 model User {
-  id          String   @id @default(cuid())
-  telegramId  BigInt   @unique
-  firstName   String
-  lastName    String?
-  username    String?
+  id           String   @id @default(cuid())
+  telegramId   BigInt   @unique
+  firstName    String
+  lastName     String?
+  username     String?
   languageCode String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  avatarUrl    String?
+  bio          String?
+  level        Int      @default(1)
+  experience   Int      @default(0)
+  isActive     Boolean  @default(true)
+  isVerified   Boolean  @default(false)
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   
   // Relations
-  bottles     Bottle[]
-  replies     Reply[]
-  discoveries Discovery[]
+  bottles           Bottle[]
+  replies           Reply[]
+  discoveries       Discovery[]
+  likes             BottleLike[]
+  bookmarks         BottleBookmark[]
+  settings          UserSettings?
+  stats             UserStats?
+  achievements      UserAchievement[]
+  sentReports       Report[]       @relation("ReportSender")
+  receivedReports   Report[]       @relation("ReportTarget")
+  sentMessages      Message[]      @relation("MessageSender")
+  receivedMessages  Message[]      @relation("MessageReceiver")
+  notifications     Notification[]
+  conversationsAsUser1 Conversation[] @relation("ConversationUser1")
+  conversationsAsUser2 Conversation[] @relation("ConversationUser2")
+  following         Follow[]       @relation("Follower")
+  followers         Follow[]       @relation("Following")
   
   @@map("users")
 }
 
+model UserSettings {
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 隐私设置
+  allowDiscovery        Boolean @default(true)
+  allowDirectMessages   Boolean @default(true)
+  showOnlineStatus      Boolean @default(true)
+  allowFollow           Boolean @default(true)
+  
+  // 通知设置
+  notifyOnNewFollower   Boolean @default(true)
+  notifyOnBottleReply   Boolean @default(true)
+  notifyOnBottleLike    Boolean @default(true)
+  notifyOnDirectMessage Boolean @default(true)
+  notifyOnAchievement   Boolean @default(true)
+  
+  // 内容设置
+  contentLanguage       String  @default("zh")
+  adultContentFilter    Boolean @default(true)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@map("user_settings")
+}
+
+model UserStats {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 漂流瓶统计
+  bottlesCreated    Int      @default(0)
+  bottlesDiscovered Int      @default(0)
+  repliesReceived   Int      @default(0)
+  repliesSent       Int      @default(0)
+  likesReceived     Int      @default(0)
+  likesGiven        Int      @default(0)
+  
+  // 社交统计
+  followersCount    Int      @default(0)
+  followingCount    Int      @default(0)
+  
+  // 成就统计
+  achievementsCount Int      @default(0)
+  
+  // 活跃度统计
+  dailyStreak       Int      @default(0)
+  longestStreak     Int      @default(0)
+  lastActiveDate    DateTime @default(now())
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("user_stats")
+}
+
+// ==================== 漂流瓶相关模型 ====================
+
 model Bottle {
-  id          String    @id @default(cuid())
+  id          String      @id @default(cuid())
   content     String
-  mediaType   MediaType @default(TEXT)
+  mediaType   MediaType   @default(TEXT)
   mediaUrl    String?
   bottleStyle Json?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  status      BottleStatus @default(ACTIVE)
+  isActive    Boolean     @default(true)
+  
+  // 地理位置信息（可选）
+  latitude    Float?
+  longitude   Float?
+  location    String?
+  
+  // 统计数据
+  viewCount   Int         @default(0)
+  likeCount   Int         @default(0)
+  replyCount  Int         @default(0)
+  
+  // 生命周期
+  expiresAt   DateTime?
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   
   // Relations
   userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies     Reply[]
   discoveries Discovery[]
+  likes       BottleLike[]
+  bookmarks   BottleBookmark[]
+  reports     Report[]
+  tags        BottleTag[]
   
   @@map("bottles")
 }
 
+model BottleTag {
+  id       String @id @default(cuid())
+  bottleId String
+  bottle   Bottle @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  tagId    String
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  @@unique([bottleId, tagId])
+  @@map("bottle_tags")
+}
+
+model Tag {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String?
+  color       String      @default("#3B82F6")
+  isActive    Boolean     @default(true)
+  usageCount  Int         @default(0)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  bottles     BottleTag[]
+  
+  @@map("tags")
+}
+
 model Reply {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   content   String
   mediaType MediaType @default(TEXT)
   mediaUrl  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    ReplyStatus @default(ACTIVE)
+  isActive  Boolean   @default(true)
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   
   // Relations
   userId    String
   user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   bottleId  String
   bottle    Bottle @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  reports   Report[]
   
   @@map("replies")
 }
 
 model Discovery {
-  id         String   @id @default(cuid())
+  id           String   @id @default(cuid())
   discoveredAt DateTime @default(now())
   
   // Relations
-  userId     String
-  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bottleId   String
-  bottle     Bottle @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bottleId     String
+  bottle       Bottle @relation(fields: [bottleId], references: [id], onDelete: Cascade)
   
   @@unique([userId, bottleId])
   @@map("discoveries")
 }
 
+// ==================== 社交功能模型 ====================
+
+model BottleLike {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bottleId String
+  bottle   Bottle   @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, bottleId])
+  @@map("bottle_likes")
+}
+
+model BottleBookmark {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bottleId String
+  bottle   Bottle   @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, bottleId])
+  @@map("bottle_bookmarks")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+// ==================== 举报和安全模型 ====================
+
+model Report {
+  id          String      @id @default(cuid())
+  reason      ReportReason
+  description String?
+  status      ReportStatus @default(PENDING)
+  
+  // 举报目标
+  bottleId    String?
+  bottle      Bottle?     @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  replyId     String?
+  reply       Reply?      @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  targetUserId String?
+  targetUser  User?       @relation("ReportTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  
+  // 举报人
+  reporterId  String
+  reporter    User        @relation("ReportSender", fields: [reporterId], references: [id], onDelete: Cascade)
+  
+  // 处理信息
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  resolution  String?
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@map("reports")
+}
+
+// ==================== 消息和通知模型 ====================
+
+model Conversation {
+  id           String    @id @default(cuid())
+  user1Id      String
+  user1        User      @relation("ConversationUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2Id      String
+  user2        User      @relation("ConversationUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  
+  // 最后消息信息
+  lastMessageId String?
+  lastMessageAt DateTime?
+  
+  // 会话状态
+  isActive     Boolean   @default(true)
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  // Relations
+  messages     Message[]
+  
+  @@unique([user1Id, user2Id])
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  content        String
+  mediaType      MediaType   @default(TEXT)
+  mediaUrl       String?
+  messageType    MessageType @default(DIRECT)
+  
+  // 消息状态
+  isRead         Boolean     @default(false)
+  readAt         DateTime?
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  // Relations
+  senderId       String
+  sender         User        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId     String
+  receiver       User        @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  content   String
+  data      Json?
+  
+  // 状态
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  
+  createdAt DateTime         @default(now())
+  
+  // Relations
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+// ==================== 成就系统模型 ====================
+
+model Achievement {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String
+  icon        String
+  category    AchievementCategory
+  
+  // 解锁条件
+  requirement Json
+  points      Int               @default(0)
+  
+  // 稀有度
+  rarity      AchievementRarity @default(COMMON)
+  
+  isActive    Boolean           @default(true)
+  
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  // Relations
+  userAchievements UserAchievement[]
+  
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  unlockedAt    DateTime    @default(now())
+  progress      Float       @default(1.0) // 0.0 - 1.0
+  
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// ==================== 枚举定义 ====================
+
 enum MediaType {
   TEXT
   IMAGE
   AUDIO
+  VIDEO
+}
+
+enum BottleStatus {
+  DRAFT       // 草稿
+  ACTIVE      // 活跃
+  EXPIRED     // 过期
+  REPORTED    // 被举报
+  DELETED     // 已删除
+  ARCHIVED    // 已归档
+}
+
+enum ReplyStatus {
+  ACTIVE
+  REPORTED
+  DELETED
+  HIDDEN
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  VIOLENCE
+  HATE_SPEECH
+  MISINFORMATION
+  COPYRIGHT
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum MessageType {
+  DIRECT      // 私聊消息
+  SYSTEM      // 系统消息
+  NOTIFICATION // 通知消息
+}
+
+enum NotificationType {
+  NEW_FOLLOWER
+  BOTTLE_REPLY
+  BOTTLE_LIKE
+  DIRECT_MESSAGE
+  ACHIEVEMENT_UNLOCKED
+  SYSTEM_ANNOUNCEMENT
+  BOTTLE_DISCOVERED
+  MENTION
+}
+
+enum AchievementCategory {
+  SOCIAL      // 社交成就
+  DISCOVERY   // 发现成就
+  CREATION    // 创作成就
+  ENGAGEMENT  // 互动成就
+  MILESTONE   // 里程碑成就
+  SPECIAL     // 特殊成就
+}
+
+enum AchievementRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
 } 

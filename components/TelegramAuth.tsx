@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { useUserActions } from "@/hooks/useUserActions";
 
 interface TelegramAuthProps {
   onAuthSuccess?: () => void;
@@ -20,6 +21,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
     clearError,
     isDevelopmentMode,
   } = useTelegramAuth();
+  const { checkUser, loading } = useUserActions();
 
   useEffect(() => {
     if (isAuthenticated && onAuthSuccess) {
@@ -27,8 +29,11 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
     }
   }, [isAuthenticated, onAuthSuccess]);
 
-  const handleLogin = () => {
-    router.push("/dashboard");
+  const handleLogin = async () => {
+    if (loading) return;
+    const userInfo = await checkUser(user!);
+    if (!userInfo) return;
+    router.push("/home");
   };
 
   if (isLoading) {
@@ -178,7 +183,14 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
               onClick={handleLogin}
               className="flex-1 btn-ocean font-semibold py-3 px-6 rounded-xl text-lg ripple-effect"
             >
-              进入漂流瓶
+              {loading ? (
+                <>
+                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-ocean-500"></span>
+                  <span>加载中...</span>
+                </>
+              ) : (
+                "进入漂流瓶"
+              )}
             </button>
             <button
               onClick={logout}

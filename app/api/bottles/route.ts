@@ -81,45 +81,56 @@ export async function GET(request: NextRequest) {
 // POST /api/bottles - 创建新漂流瓶
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-
-    // 验证请求体
-    const validatedData = CreateBottleSchema.parse(body);
-
-    // 这里应该从认证中间件获取用户ID
-    // 为了演示，我们从请求体中获取
-    const { userId, ...bottleData } = body;
-
-    if (!userId) {
+    // 1. 认证：从 header 获取 Telegram InitData
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
       return NextResponse.json(
         {
           success: false,
-          error: "MISSING_USER_ID",
-          message: "缺少用户ID",
+          error: "UNAUTHORIZED",
+          message: "未提供认证信息",
+          timestamp: new Date().toISOString(),
         },
-        { status: 400 }
+        { status: 401 }
       );
     }
-
-    // 验证用户是否存在
-    const user = await userOperations.getById(userId);
+    const initData = authHeader.replace("Bearer ", "");
+    const { verifyTelegramAuth } = await import("@/lib/telegram-auth");
+    const botToken = process.env.TELEGRAM_BOT_TOKEN!;
+    const validation = verifyTelegramAuth(initData, botToken);
+    if (!validation.isValid || !validation.user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "INVALID_AUTH",
+          message: validation.error || "认证失败",
+          timestamp: new Date().toISOString(),
+        },
+        { status: 401 }
+      );
+    }
+    // 2. 获取/创建用户
+    const user = await userOperations.upsertByTelegramId(validation.user);
     if (!user) {
       return NextResponse.json(
         {
           success: false,
           error: "USER_NOT_FOUND",
           message: "用户不存在",
+          timestamp: new Date().toISOString(),
         },
         { status: 404 }
       );
     }
-
-    // 创建漂流瓶
+    // 3. 解析请求体并校验
+    const body = await request.json();
+    const validatedData = CreateBottleSchema.parse(body);
+    // 4. 创建漂流瓶
     const bottle = await bottleOperations.create({
       ...validatedData,
-      userId,
+      userId: user.id,
     });
-
+    // 5. 返回成功响应
     return NextResponse.json(
       {
         success: true,
@@ -132,6 +143,7 @@ export async function POST(request: NextRequest) {
           createdAt: bottle.createdAt,
         },
         message: "漂流瓶投递成功！🍾",
+        timestamp: new Date().toISOString(),
       },
       { status: 201 }
     );
@@ -143,17 +155,19 @@ export async function POST(request: NextRequest) {
           error: "VALIDATION_ERROR",
           message: error.errors[0].message,
           details: error.errors,
+          timestamp: new Date().toISOString(),
         },
         { status: 400 }
       );
     }
-
+    // 统一错误响应
     console.error("创建漂流瓶失败:", error);
     return NextResponse.json(
       {
         success: false,
         error: "INTERNAL_ERROR",
         message: "创建漂流瓶失败",
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );

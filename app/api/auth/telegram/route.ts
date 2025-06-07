@@ -3,7 +3,7 @@ import { verifyTelegramAuth } from "@/lib/telegram-auth";
 
 // 开发模式的模拟用户数据
 const MOCK_USER = {
-  id: 123456789,
+  id: 12345678912,
   first_name: "张",
   last_name: "三",
   username: "zhangsan",

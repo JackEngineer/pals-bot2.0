@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import BottomNav from "@/components/navigation/BottomNav";
+import TelegramAuth from "@/components/TelegramAuth";
+import { useState } from "react";
 
 export const metadata: Metadata = {
   title: "Pals Bot 2.0 - 漂流瓶",
@@ -12,6 +14,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+
   return (
     <html lang="zh-CN">
       <head>

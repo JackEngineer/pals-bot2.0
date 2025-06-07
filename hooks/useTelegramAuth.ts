@@ -240,7 +240,6 @@ export function useTelegramAuth() {
     isDevelopmentMode: isDevelopmentMode(),
   };
 }
-
 // 声明 Telegram WebApp 类型
 declare global {
   interface Window {
