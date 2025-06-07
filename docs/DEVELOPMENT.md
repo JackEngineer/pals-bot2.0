@@ -132,3 +132,84 @@ vercel --prod
 2. **跨域问题**：确保正确配置了 CORS
 3. **用户体验**：考虑 WebView 环境的性能限制
 4. **测试覆盖**：在不同设备和 Telegram 客户端测试
+
+# 开发模式说明
+
+## 概述
+
+Pals Bot 2.0 提供了完善的开发模式，让开发者可以在没有真实 Telegram 环境的情况下测试应用功能。
+
+## 开发模式特性
+
+### 自动检测
+
+- 当 `NODE_ENV === 'development'` 或者运行在 `localhost` 时，应用会自动启用开发模式
+- 开发模式下会显示 🚧 开发模式标识
+
+### 模拟用户数据
+
+```javascript
+const MOCK_USER = {
+  id: 123456789,
+  first_name: "张",
+  last_name: "三",
+  username: "zhangsan",
+  language_code: "zh",
+  is_premium: false,
+  photo_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=zhangsan",
+};
+```
+
+### 身份验证流程
+
+1. **前端检测**：`useTelegramAuth` hook 会检测当前环境
+2. **模拟登录**：如果不在真实 Telegram 环境中，会使用模拟数据
+3. **API 后备**：API 端点也支持开发模式，提供多层后备机制
+
+## 使用方法
+
+### 启动开发服务器
+
+```bash
+npm run dev
+# 或
+pnpm dev
+```
+
+### 测试流程
+
+1. 打开浏览器访问 `http://localhost:3000`
+2. 看到开发模式标识后，等待自动身份验证
+3. 验证成功后可以点击"进入应用"按钮
+4. 进入仪表板页面测试功能
+
+## 环境变量配置
+
+### 可选配置
+
+```env
+# 如果有真实的 Telegram Bot Token，可以配置
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+```
+
+### 开发模式下的行为
+
+- **有 Bot Token**：优先使用真实验证，失败时降级到模拟数据
+- **无 Bot Token**：直接使用模拟数据
+- **网络错误**：自动降级到模拟数据
+
+## 页面路由
+
+- `/` - 主页（身份验证）
+- `/dashboard` - 仪表板（需要登录）
+
+## 开发提示
+
+1. **热重载**：修改代码后页面会自动刷新
+2. **状态保持**：开发模式下登录状态在页面刷新后会重新验证
+3. **错误处理**：所有错误都有友好的降级处理
+4. **网络模拟**：模拟了 1 秒的网络延迟，更接近真实环境
+
+## 生产环境
+
+在生产环境中，开发模式会自动禁用，只能通过真实的 Telegram WebApp 环境进行身份验证。
