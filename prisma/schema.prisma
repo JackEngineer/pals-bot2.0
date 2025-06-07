@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  telegramId  BigInt   @unique
+  firstName   String
+  lastName    String?
+  username    String?
+  languageCode String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  bottles     Bottle[]
+  replies     Reply[]
+  discoveries Discovery[]
+  
+  @@map("users")
+}
+
+model Bottle {
+  id          String    @id @default(cuid())
+  content     String
+  mediaType   MediaType @default(TEXT)
+  mediaUrl    String?
+  bottleStyle Json?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies     Reply[]
+  discoveries Discovery[]
+  
+  @@map("bottles")
+}
+
+model Reply {
+  id        String   @id @default(cuid())
+  content   String
+  mediaType MediaType @default(TEXT)
+  mediaUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bottleId  String
+  bottle    Bottle @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  
+  @@map("replies")
+}
+
+model Discovery {
+  id         String   @id @default(cuid())
+  discoveredAt DateTime @default(now())
+  
+  // Relations
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bottleId   String
+  bottle     Bottle @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, bottleId])
+  @@map("discoveries")
+}
+
+enum MediaType {
+  TEXT
+  IMAGE
+  AUDIO
+} 
