@@ -58,7 +58,7 @@ body {
       transparent 1px
     );
   background-size: 50px 50px, 30px 30px, 70px 70px;
-  animation: float 6s ease-in-out infinite;
+  /* animation: float 6s ease-in-out infinite; */
 }
 
 /* Telegram Mini App 样式 - 海洋主题 */

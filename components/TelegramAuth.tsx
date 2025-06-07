@@ -81,7 +81,7 @@ export default function TelegramAuth() {
 
   if (isAuthenticated && user) {
     return (
-      <div className="bottle-card rounded-2xl p-6 max-w-md mx-auto shadow-lg border-l-4 border-ocean-400 animate-float">
+      <div className="bottle-card rounded-2xl p-6 max-w-md mx-auto shadow-lg border-l-4 border-ocean-400">
         {isDevelopmentMode && (
           <div className="mb-4 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded text-center">
             🚧 开发模式
