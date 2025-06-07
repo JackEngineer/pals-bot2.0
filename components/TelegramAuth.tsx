@@ -1,9 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 
-export default function TelegramAuth() {
+interface TelegramAuthProps {
+  onAuthSuccess?: () => void;
+}
+
+export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
   const router = useRouter();
   const {
     isLoading,
@@ -15,6 +20,12 @@ export default function TelegramAuth() {
     clearError,
     isDevelopmentMode,
   } = useTelegramAuth();
+
+  useEffect(() => {
+    if (isAuthenticated && onAuthSuccess) {
+      onAuthSuccess();
+    }
+  }, [isAuthenticated, onAuthSuccess]);
 
   const handleLogin = () => {
     router.push("/dashboard");

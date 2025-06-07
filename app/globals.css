@@ -141,6 +141,7 @@ body {
 /* 漂流瓶样式类 */
 .bottle-card {
   background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(14, 165, 233, 0.2);
   box-shadow: 0 8px 32px rgba(14, 165, 233, 0.1);
@@ -177,6 +178,7 @@ body {
 .input-ocean {
   border: 2px solid rgba(14, 165, 233, 0.2);
   background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
@@ -209,4 +211,283 @@ body {
 .ripple-effect:active::after {
   width: 300px;
   height: 300px;
+}
+
+/* 海洋按钮样式 */
+.ocean-button {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.ocean-button:hover {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  box-shadow: 0 8px 25px rgba(14, 165, 233, 0.35);
+  transform: translateY(-2px);
+}
+
+.ocean-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25);
+}
+
+/* 海洋主题背景渐变 */
+.bg-ocean-gradient {
+  background: linear-gradient(
+    135deg,
+    #0ea5e9 0%,
+    #0284c7 25%,
+    #0369a1 50%,
+    #075985 75%,
+    #0c4a6e 100%
+  );
+}
+
+.bg-ocean-light {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+}
+
+.bg-ocean-waves {
+  background: linear-gradient(
+    135deg,
+    #38bdf8 0%,
+    #0ea5e9 25%,
+    #0284c7 50%,
+    #0369a1 75%,
+    #075985 100%
+  );
+}
+
+.bg-deep-ocean {
+  background: linear-gradient(
+    180deg,
+    #0ea5e9 0%,
+    #0284c7 25%,
+    #0369a1 50%,
+    #075985 75%,
+    #0c4a6e 100%
+  );
+}
+
+.bg-water-ripple {
+  background-image: radial-gradient(
+      circle at 30% 20%,
+      rgba(56, 189, 248, 0.3) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 70% 80%,
+      rgba(14, 165, 233, 0.3) 0%,
+      transparent 30%
+    );
+  background-size: 100px 100px, 150px 150px;
+  animation: ripple-move 8s ease-in-out infinite;
+}
+
+@keyframes ripple-move {
+  0%,
+  100% {
+    background-position: 0% 0%, 100% 100%;
+  }
+  50% {
+    background-position: 100% 0%, 0% 100%;
+  }
+}
+
+/* 漂浮动画增强 */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(-5px) rotate(-1deg);
+  }
+}
+
+/* 波浪动画增强 */
+.animate-wave {
+  animation: wave 2s ease-in-out infinite;
+}
+
+.animate-wave-slow {
+  animation: wave 3s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* 泡泡动画 */
+.animate-bubble {
+  animation: bubble 4s ease-in-out infinite;
+}
+
+@keyframes bubble {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.1);
+    opacity: 1;
+  }
+}
+
+/* 液体波动动画 */
+.liquid-wave {
+  animation: liquid-wave 3s ease-in-out infinite;
+}
+
+@keyframes liquid-wave {
+  0%,
+  100% {
+    transform: translateX(-50%) scaleY(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateX(-50%) scaleY(1.1);
+    opacity: 0.9;
+  }
+}
+
+/* 简化的漂流瓶设计 */
+.bottle-shape {
+  position: relative;
+  overflow: visible;
+  /* 瓶身主体：圆润的瓶子形状 */
+  border-radius: 10% 10% 10% 10%;
+  /* 玻璃质感和阴影 */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15),
+    inset 4px 4px 12px rgba(255, 255, 255, 0.3),
+    inset -4px -4px 12px rgba(0, 0, 0, 0.1);
+  /* 确保背景能被正确继承 */
+  background: inherit;
+}
+
+/* 瓶子肩部 - 从宽大身体逐渐收窄 */
+.bottle-shoulder {
+  position: absolute;
+  top: -2%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 10%;
+  border-radius: 25% 25% 5% 5%;
+  z-index: 1;
+  /* 添加透明效果 */
+  opacity: 0;
+  /* box-shadow: inset 2px 2px 6px rgba(255, 255, 255, 0.4),
+    inset -2px -2px 6px rgba(0, 0, 0, 0.1); */
+}
+
+/* 瓶颈 - 细长的颈部 */
+.bottle-neck {
+  position: absolute;
+  top: -32%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 35%;
+  height: 35%;
+  border-radius: 15% 15% 5% 5%;
+  z-index: 5;
+  /* 添加透明效果 */
+  opacity: 0.65;
+  /* 恢复基础的玻璃质感阴影 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+    inset -1px -1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 瓶口环 - 瓶口的小边缘 */
+.bottle-rim {
+  display: none;
+  width: 10%;
+  height: 6%;
+  position: absolute;
+  top: -32%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  z-index: 3;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* 软木塞 - 简单的棕色纯色软木塞 */
+.bottle-mouth {
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26%;
+  height: 36%;
+  /* 简单的棕色背景 */
+  background: #8b4513;
+  /* 圆润的软木塞形状 */
+  border-radius: 4px 4px 0 0;
+  z-index: 4;
+  /* 简单的立体阴影 */
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+/* 主要高光 - 左侧反光 */
+.bottle-shape::before {
+  content: "";
+  position: absolute;
+  top: 20%;
+  left: 15%;
+  width: 25%;
+  height: 40%;
+  background: linear-gradient(
+    130deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  border-radius: 60% 30% 80% 20%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* 次要反光 - 右侧小反光 */
+.bottle-shape::after {
+  content: "";
+  position: absolute;
+  top: 30%;
+  right: 12%;
+  width: 12%;
+  height: 25%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.1) 60%,
+    transparent 100%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 4;
 }
