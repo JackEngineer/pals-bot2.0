@@ -87,7 +87,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                🏖️ 捡拾漂流瓶
+                🏖️ 捞瓶子
               </h3>
               <p className="text-sm text-gray-600">
                 在数字海滩上寻找别人的漂流瓶，发现有趣的故事
