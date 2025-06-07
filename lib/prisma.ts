@@ -126,8 +126,15 @@ export const bottleOperations = {
 
   // 记录用户发现漂流瓶
   async recordDiscovery(userId: string, bottleId: string) {
-    return prisma.discovery.create({
-      data: {
+    return prisma.discovery.upsert({
+      where: {
+        userId_bottleId: {
+          userId,
+          bottleId,
+        },
+      },
+      update: {}, // 已存在则不做任何更新
+      create: {
         userId,
         bottleId,
       },

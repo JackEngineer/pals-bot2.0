@@ -26,7 +26,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [floatingBottles, setFloatingBottles] = useState<BottleData[]>([]);
 
-  const { throwBottle, catchBottle, loading } = useBottleActions();
+  const { throwBottle, pickBottle, loading } = useBottleActions();
   // 模拟漂流瓶数据
   const mockBottles: BottleData[] = [
     {
@@ -61,20 +61,22 @@ export default function Home() {
     setFloatingBottles(mockBottles.slice(0, 3));
   }, []);
 
-  const handleCatchBottle = () => {
-    if (isLoading) return;
-
-    setIsLoading(true);
-
-    // 模拟网络请求延迟
-    setTimeout(() => {
-      const randomBottle =
-        mockBottles[Math.floor(Math.random() * mockBottles.length)];
-      setCurrentBottle(randomBottle);
-      setIsLoading(false);
-    }, 1500);
+  /**
+   * 捞瓶子
+   */
+  const handlePickBottle = async () => {
+    console.log("handlePickBottle", loading);
+    // if (loading) return;
+    const bottle = await pickBottle();
+    console.log("pickBottle", bottle);
+    if (bottle) {
+      setCurrentBottle(bottle);
+    }
   };
 
+  /**
+   * 扔瓶子
+   */
   const handleThrowBottle = async (
     content: string,
     mediaType: string = "TEXT",
@@ -92,6 +94,9 @@ export default function Home() {
     // toast.success("🌊 漂流瓶已经投入大海，祝它找到有缘人！");
   };
 
+  /**
+   * 回复瓶子
+   */
   const handleReply = () => {
     // 跳转到聊天页面
     window.location.href = "/chat";
@@ -193,19 +198,19 @@ export default function Home() {
             </button>
 
             <button
-              onClick={handleCatchBottle}
-              disabled={isLoading}
+              onClick={handlePickBottle}
+              disabled={loading}
               className="bg-aqua-500 hover:bg-aqua-600 text-white py-4 px-6 rounded-2xl
                 text-center transition-all duration-200 hover:scale-105 hover:shadow-lg
                 hover:shadow-aqua-500/25 active:scale-95 disabled:opacity-50
                 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <div className="text-2xl mb-2">{isLoading ? "🌊" : "🎣"}</div>
+              <div className="text-2xl mb-2">{loading ? "🌊" : "🎣"}</div>
               <div className="font-semibold text-sm">
-                {isLoading ? "捞取中..." : "捞瓶子"}
+                {loading ? "捞取中..." : "捞瓶子"}
               </div>
               <div className="text-xs opacity-80 mt-1">
-                {isLoading ? "请稍候" : "发现惊喜"}
+                {loading ? "请稍候" : "发现惊喜"}
               </div>
             </button>
           </div>

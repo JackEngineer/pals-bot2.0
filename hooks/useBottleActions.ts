@@ -1,13 +1,28 @@
 import { useState } from "react";
 import { useTelegramAuth } from "./useTelegramAuth";
-import { post } from "@/lib/request";
+import { get, post } from "@/lib/request";
 import { useUserStore } from "./useUserStore";
+import { useRouter } from "next/navigation";
+
+interface BottleData {
+  id: string;
+  content: string;
+  mediaType?: "text" | "image" | "audio";
+  mediaUrl?: string;
+  createdAt: Date;
+  bottleStyle?: {
+    color: string;
+    pattern: string;
+    decoration: string;
+  };
+}
 
 export function useBottleActions() {
   const [loading, setLoading] = useState(false);
 
-  const { isAuthenticated } = useTelegramAuth();
+  const { isAuthenticated, isLoading: isTelegramLoading } = useTelegramAuth();
   const user = useUserStore((state) => state.user);
+  const router = useRouter();
 
   // 扔瓶子
   const throwBottle = async (
@@ -34,14 +49,30 @@ export function useBottleActions() {
   };
 
   // 捞瓶子
-  const catchBottle = async () => {
+  const pickBottle = async (): Promise<BottleData | null> => {
     setLoading(true);
-    try {
-      // ...API 调用逻辑...
-    } finally {
+    if (!isAuthenticated || !user) {
       setLoading(false);
+      router.push("/");
+      return null;
+    };
+    try {
+      const bottle: any = await get(`/api/bottles/random?userId=${user.id}`);
+      if (bottle) {
+        return {
+          id: bottle.id,
+          content: bottle.content,
+          mediaType: bottle.mediaType,
+          mediaUrl: bottle.mediaUrl,
+          createdAt: bottle.createdAt,
+          bottleStyle: bottle.bottleStyle,
+        };
+      }
+      return null;
+    } finally {
+      setLoading(false); // 无论成功与否，都设置为 false
     }
   };
 
-  return { throwBottle, catchBottle, loading };
+  return { throwBottle, pickBottle, loading };
 }

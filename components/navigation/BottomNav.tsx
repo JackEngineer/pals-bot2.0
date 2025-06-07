@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
     id: "home",
     label: "海边",
     icon: "🌊",
-    path: "/",
+    path: "/home",
     emoji: "🏖️",
   },
   {

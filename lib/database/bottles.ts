@@ -53,3 +53,54 @@ function isValidUrl(url: string) {
     return false;
   }
 }
+
+/**
+ * 随机捞取一个漂流瓶（不包含自己的）
+ * @param userId 当前用户ID
+ * @returns 随机漂流瓶或 null
+ */
+export async function getRandomBottle(userId: string): Promise<Bottle | null> {
+  // 先取 20 个活跃且不是自己的瓶子，再前端随机
+  const bottles = await prisma.bottle.findMany({
+    where: {
+      isActive: true,
+      userId: { not: userId },
+    },
+    orderBy: { createdAt: "desc" }, // 新瓶优先
+    take: 20,
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          username: true,
+        },
+      },
+      replies: {
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+      _count: {
+        select: {
+          replies: true,
+          discoveries: true,
+        },
+      },
+    },
+  });
+
+  if (bottles.length === 0) return null;
+
+  const randomIndex = Math.floor(Math.random() * bottles.length);
+  return bottles[randomIndex];
+}

@@ -46,9 +46,9 @@ export default function BottleCard({
       : baseStyle;
   };
 
-  const getTimeAgo = (date: Date) => {
+  const getTimeAgo = (date: string) => {
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const diffMs = now.getTime() - new Date(date).getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
