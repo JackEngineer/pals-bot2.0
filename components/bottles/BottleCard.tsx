@@ -19,6 +19,7 @@ interface BottleCardProps {
   bottle: BottleData;
   onOpen?: () => void;
   onReply?: () => void;
+  onThrowBack?: () => void;
   showActions?: boolean;
   isFloating?: boolean;
 }
@@ -27,6 +28,7 @@ export default function BottleCard({
   bottle,
   onOpen,
   onReply,
+  onThrowBack,
   showActions = true,
   isFloating = false,
 }: BottleCardProps) {
@@ -202,11 +204,19 @@ export default function BottleCard({
             <div className="flex gap-3 pt-2">
               <button
                 onClick={onReply}
-                className="flex-1 bg-ocean-500 hover:bg-ocean-600 text-white 
+                className="flex-1 bg-green-600 hover:bg-green-600 text-white 
                   py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200
                   flex items-center justify-center gap-2"
               >
                 💬 回复
+              </button>
+              <button
+                onClick={onThrowBack}
+                className="flex-1 bg-ocean-400 hover:bg-ocean-600 text-white 
+                  py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200
+                  flex items-center justify-center gap-2"
+              >
+                扔回大海
               </button>
               <button
                 className="bg-ocean-100 hover:bg-ocean-200 text-ocean-700 

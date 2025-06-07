@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import TelegramAuth from "@/components/TelegramAuth";
 import BottleCard from "@/components/bottles/BottleCard";
 import BottleEditor from "@/components/bottles/BottleEditor";
+import "./page.css";
 
 // 模拟数据接口
 interface BottleData {
@@ -95,7 +96,7 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-ocean-light ocean-background pb-20">
+      <div className="min-h-screen bg-ocean-light ocean-background pb-8">
         {/* 海洋波纹背景层 */}
         <div className="absolute inset-0 bg-water-ripple opacity-30"></div>
 
@@ -172,101 +173,14 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-ocean-light ocean-background pb-20">
+    <div className="home min-h-screen bg-ocean-light ocean-background pb-20">
       {/* 海洋波纹背景层 */}
       <div className="absolute inset-0 bg-water-ripple opacity-30"></div>
 
-      <div className="relative z-10 p-4">
+      <div className="home-content relative z-10 p-4">
         <div className="max-w-lg mx-auto">
-          {/* 页面标题 */}
-          <div className="text-center py-6">
-            <h1 className="text-2xl font-bold text-ocean-800 mb-2">🏖️ 海边</h1>
-            <p className="text-ocean-600 text-sm">在这里投递和发现漂流瓶</p>
-          </div>
-
           {/* 主要操作区域 */}
           <div className="space-y-6">
-            {/* 操作按钮 */}
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setShowEditor(true)}
-                className="bg-ocean-500 hover:bg-ocean-600 text-white py-4 px-6 rounded-2xl
-                  text-center transition-all duration-200 hover:scale-105 hover:shadow-lg
-                  hover:shadow-ocean-500/25 active:scale-95"
-              >
-                <div className="text-2xl mb-2">💌</div>
-                <div className="font-semibold text-sm">投递瓶子</div>
-                <div className="text-xs opacity-80 mt-1">写下心声</div>
-              </button>
-
-              <button
-                onClick={handleCatchBottle}
-                disabled={isLoading}
-                className="bg-aqua-500 hover:bg-aqua-600 text-white py-4 px-6 rounded-2xl
-                  text-center transition-all duration-200 hover:scale-105 hover:shadow-lg
-                  hover:shadow-aqua-500/25 active:scale-95 disabled:opacity-50
-                  disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                <div className="text-2xl mb-2">{isLoading ? "🌊" : "🎣"}</div>
-                <div className="font-semibold text-sm">
-                  {isLoading ? "捞取中..." : "捞瓶子"}
-                </div>
-                <div className="text-xs opacity-80 mt-1">
-                  {isLoading ? "请稍候" : "发现惊喜"}
-                </div>
-              </button>
-            </div>
-
-            {/* 海面上的漂流瓶 */}
-            <div className="bottle-card rounded-2xl p-6">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold text-ocean-800 mb-2">
-                  海面上的瓶子
-                </h3>
-                <p className="text-ocean-600 text-sm">点击瓶子可以打开查看</p>
-              </div>
-
-              <div className="flex justify-center space-x-4 py-4">
-                {floatingBottles.slice(0, 3).map((bottle, index) => (
-                  <div
-                    key={bottle.id}
-                    style={{ animationDelay: `${index * 0.5}s` }}
-                  >
-                    <BottleCard
-                      bottle={bottle}
-                      isFloating={true}
-                      onOpen={() => setCurrentBottle(bottle)}
-                      showActions={false}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 当前打开的瓶子 */}
-            {currentBottle && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold text-ocean-800 mb-2">
-                    🎉 您发现了一个漂流瓶！
-                  </h3>
-                </div>
-                <BottleCard
-                  bottle={currentBottle}
-                  onReply={handleReply}
-                  showActions={true}
-                />
-                <div className="text-center">
-                  <button
-                    onClick={() => setCurrentBottle(null)}
-                    className="text-ocean-600 hover:text-ocean-800 text-sm transition-colors"
-                  >
-                    关闭瓶子
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* 今日统计 */}
             <div className="bottle-card rounded-2xl p-4">
               <div className="text-center">
@@ -292,6 +206,83 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* 海面上的漂流瓶 */}
+            {!currentBottle ? (
+              <div className="bottle-card rounded-2xl p-6">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold text-ocean-800 mb-2">
+                    海面上的瓶子
+                  </h3>
+                  <p className="text-ocean-600 text-sm">点击瓶子可以打开查看</p>
+                </div>
+
+                <div className="flex justify-center space-x-4 py-4">
+                  {floatingBottles.slice(0, 3).map((bottle, index) => (
+                    <div
+                      key={bottle.id}
+                      style={{ animationDelay: `${index * 0.5}s` }}
+                    >
+                      <BottleCard
+                        bottle={bottle}
+                        isFloating={true}
+                        onOpen={() => setCurrentBottle(bottle)}
+                        showActions={false}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-ocean-800 mb-2">
+                    🎉 您发现了一个漂流瓶！
+                  </h3>
+                </div>
+                <BottleCard
+                  bottle={currentBottle}
+                  onReply={handleReply}
+                  showActions={true}
+                  onThrowBack={() => setCurrentBottle(null)}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 操作按钮 */}
+      <div className="home-actions backdrop-blur-sm p-4 safe-area-pb">
+        <div className="max-w-lg mx-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => setShowEditor(true)}
+              className="bg-ocean-500 hover:bg-ocean-600 text-white py-4 px-6 rounded-2xl
+                text-center transition-all duration-200 hover:scale-105 hover:shadow-lg
+                hover:shadow-ocean-500/25 active:scale-95"
+            >
+              <div className="text-2xl mb-2">🫙</div>
+              <div className="font-semibold text-sm">扔瓶子</div>
+              <div className="text-xs opacity-80 mt-1">写下你想说的话</div>
+            </button>
+
+            <button
+              onClick={handleCatchBottle}
+              disabled={isLoading}
+              className="bg-aqua-500 hover:bg-aqua-600 text-white py-4 px-6 rounded-2xl
+                text-center transition-all duration-200 hover:scale-105 hover:shadow-lg
+                hover:shadow-aqua-500/25 active:scale-95 disabled:opacity-50
+                disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <div className="text-2xl mb-2">{isLoading ? "🌊" : "🎣"}</div>
+              <div className="font-semibold text-sm">
+                {isLoading ? "捞取中..." : "捞瓶子"}
+              </div>
+              <div className="text-xs opacity-80 mt-1">
+                {isLoading ? "请稍候" : "发现惊喜"}
+              </div>
+            </button>
           </div>
         </div>
       </div>
