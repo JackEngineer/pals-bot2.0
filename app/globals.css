@@ -491,3 +491,246 @@ body {
   pointer-events: none;
   z-index: 4;
 }
+
+/* 漂流瓶动画相关延迟类 */
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animation-delay-500 {
+  animation-delay: 0.5s;
+}
+
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+.animation-delay-1500 {
+  animation-delay: 1.5s;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-2500 {
+  animation-delay: 2.5s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* 漂流瓶加载动画专用关键帧 */
+@keyframes wave-gentle {
+  0%,
+  100% {
+    transform: translateX(0) translateY(0);
+  }
+  50% {
+    transform: translateX(4px) translateY(-2px);
+  }
+}
+
+@keyframes wave-gentle-slow {
+  0%,
+  100% {
+    transform: translateX(0) translateY(0);
+    opacity: 0.1;
+  }
+  50% {
+    transform: translateX(-6px) translateY(-1px);
+    opacity: 0.2;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateX(0) translateY(0) rotate(12deg);
+  }
+  25% {
+    transform: translateX(10px) translateY(-4px) rotate(18deg);
+  }
+  50% {
+    transform: translateX(5px) translateY(-8px) rotate(8deg);
+  }
+  75% {
+    transform: translateX(-5px) translateY(-2px) rotate(22deg);
+  }
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gentle-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes arrow-bounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(45deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(4px) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(0) scale(0);
+    opacity: 0;
+  }
+  10% {
+    transform: translateY(-2px) scale(1);
+    opacity: 1;
+  }
+  90% {
+    transform: translateY(-30px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-32px) scale(0);
+    opacity: 0;
+  }
+}
+
+/* 波浪效果增强 */
+@keyframes wave-enhanced {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(-4px) scaleY(0.95);
+  }
+}
+
+@keyframes wave-slow-enhanced {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-2px) scaleY(0.98);
+    opacity: 0.8;
+  }
+}
+
+/* 钓鱼动画增强 */
+@keyframes fishing-rod-sway {
+  0%,
+  100% {
+    transform: rotate(65deg);
+  }
+  50% {
+    transform: rotate(70deg);
+  }
+}
+
+@keyframes hook-swing {
+  0%,
+  100% {
+    transform: translateX(-50%) rotate(-5deg);
+  }
+  50% {
+    transform: translateX(-50%) rotate(5deg);
+  }
+}
+
+@keyframes bobber-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes underwater-sway {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  33% {
+    transform: translateX(2px) rotate(2deg);
+  }
+  66% {
+    transform: translateX(-2px) rotate(-2deg);
+  }
+}
+
+@keyframes bottle-rise {
+  0% {
+    transform: translateY(0) rotate(3deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-1deg);
+  }
+  100% {
+    transform: translateY(0) rotate(3deg);
+  }
+}
+
+@keyframes seaweed-wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+/* 添加自定义动画类 */
+.fishing-rod-sway {
+  animation: fishing-rod-sway 4s ease-in-out infinite;
+}
+
+.hook-swing {
+  animation: hook-swing 3s ease-in-out infinite;
+}
+
+.bobber-float {
+  animation: bobber-float 2s ease-in-out infinite;
+}
+
+.underwater-sway {
+  animation: underwater-sway 4s ease-in-out infinite;
+}
+
+.bottle-rise {
+  animation: bottle-rise 3s ease-in-out infinite;
+}
+
+.seaweed-wave {
+  animation: seaweed-wave 5s ease-in-out infinite;
+}

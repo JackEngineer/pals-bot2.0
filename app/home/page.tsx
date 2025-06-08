@@ -4,6 +4,7 @@ import { useState } from "react";
 import BottleCard from "@/components/bottles/BottleCard";
 import BottleEditor from "@/components/bottles/BottleEditor";
 import { BottleReplyModal } from "@/components/bottles/BottleReplyModal";
+import { BottleLoadingAnimation } from "@/components/bottles/BottleLoadingAnimation";
 import { useBottleActions } from "@/hooks/useBottleActions";
 import { useChatActions } from "@/hooks/useChatActions";
 import { useStats } from "@/hooks/useStats";
@@ -44,7 +45,8 @@ export default function Home() {
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [replyBottle, setReplyBottle] = useState<BottleData | null>(null);
 
-  const { throwBottle, pickBottle, loading, throwLoading, pickLoading } = useBottleActions();
+  const { throwBottle, pickBottle, loading, throwLoading, pickLoading } =
+    useBottleActions();
   const { createConversation, replyToBottle } = useChatActions();
   const {
     stats,
@@ -71,6 +73,7 @@ export default function Home() {
    */
   const handlePickBottle = async () => {
     if (pickLoading) return;
+    setCurrentBottle(null);
     const bottle = await pickBottle();
     if (bottle) {
       setCurrentBottle(bottle);
@@ -90,7 +93,6 @@ export default function Home() {
       decoration: "waves",
     }
   ) => {
-    console.log("投递漂流瓶:", { content, mediaType, mediaUrl, bottleStyle });
     await throwBottle(content, mediaType, mediaUrl, bottleStyle);
     setShowEditor(false);
     // 成功提示
@@ -205,7 +207,7 @@ export default function Home() {
               </div>
             </div>
 
-            {currentBottle && (
+            {currentBottle ? (
               <div className="space-y-4 mt-10">
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-ocean-800 mb-20">
@@ -217,6 +219,15 @@ export default function Home() {
                   onReply={handleReply}
                   showActions={true}
                   onThrowBack={() => setCurrentBottle(null)}
+                />
+              </div>
+            ) : (
+              <div className="w-full space-y-4 mt-10">
+                <BottleLoadingAnimation
+                  type={pickLoading ? "picking" : "waiting"}
+                  message={
+                    pickLoading ? "正在捞瓶子......" : "海面上漂浮着许多故事..."
+                  }
                 />
               </div>
             )}
@@ -271,8 +282,12 @@ export default function Home() {
         isOpen={showReplyModal}
         bottle={replyBottle}
         onClose={() => {
+          // 关闭弹窗，并清空状态
           setShowReplyModal(false);
+          // 清空回复瓶子
           setReplyBottle(null);
+          // 清空当前漂流瓶
+          setCurrentBottle(null);
         }}
         onReplySubmit={handleReplySubmit}
         onStartChat={handleStartChat}
