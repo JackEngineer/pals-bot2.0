@@ -69,7 +69,7 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen bg-ocean-light ocean-background">
       {/* 海洋波纹背景层 */}
-      <div className="absolute inset-0 bg-water-ripple opacity-30"></div>
+      {/* <div className="absolute inset-0 bg-water-ripple opacity-30"></div> */}
 
       <div className="relative z-10 h-screen flex flex-col">
         <AnimatePresence mode="wait">
@@ -82,19 +82,8 @@ export default function ChatPage() {
               transition={{ duration: 0.3 }}
               className="flex flex-col h-full"
             >
-              {/* 页面标题 */}
-              <div className="bottle-card border-b px-4 py-6 rounded-none">
-                <div className="text-center">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-2">
-                    <span className="text-3xl">💭</span>
-                    匿名聊天
-                  </h1>
-                  <p className="text-gray-600 text-sm">与陌生人的奇妙对话</p>
-                </div>
-              </div>
-
               {/* 会话列表 */}
-              <div className="flex-1 overflow-y-auto pb-20">
+              <div className="flex-1 overflow-y-auto p-4">
                 <ConversationList
                   onSelectConversation={handleSelectConversation}
                 />

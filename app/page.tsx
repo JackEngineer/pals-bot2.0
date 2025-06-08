@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-ocean-light ocean-background pb-8">
         {/* 海洋波纹背景层 */}
-        <div className="absolute inset-0 bg-water-ripple opacity-30"></div>
+        {/* <div className="absolute inset-0 bg-water-ripple opacity-10"></div> */}
 
         <div className="relative z-10 p-4">
           <div className="max-w-lg mx-auto">

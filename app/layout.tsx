@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import BottomNav from "@/components/navigation/BottomNav";
+import TopNav from "@/components/navigation/TopNav";
 import TelegramAuth from "@/components/TelegramAuth";
 import { useState } from "react";
 
@@ -14,15 +15,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-
   return (
     <html lang="zh-CN">
       <head>
         <script src="https://telegram.org/js/telegram-web-app.js"></script>
       </head>
       <body className="font-sans">
-        <div className="tg-app">
-          {children}
+        <div className="pals tg-app">
+          <TopNav />
+          <div className="pals-container pt-20">{children}</div>
           <BottomNav />
         </div>
       </body>
