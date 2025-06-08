@@ -385,7 +385,7 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
 
       {/* 输入区域 */}
       <div className="bottle-card border-t p-4 rounded-none">
-        <div className="flex items-end space-x-3">
+        <div className="flex items-center space-x-3">
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
