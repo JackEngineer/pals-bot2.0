@@ -54,12 +54,18 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const [showEndedMessage, setShowEndedMessage] = useState(false);
   const [showEndConversationDialog, setShowEndConversationDialog] =
     useState(false);
+  const [lastMessageTime, setLastMessageTime] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { getMessages, sendMessage, deleteConversation, loading } =
-    useChatActions();
+  const {
+    getMessages,
+    getNewMessages,
+    sendMessage,
+    deleteConversation,
+    loading,
+  } = useChatActions();
 
   useEffect(() => {
     fetchMessages();
@@ -82,23 +88,60 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     if (result) {
       setMessages(result.messages);
       setCurrentUserId(result.currentUserId);
+      // 记录最后消息时间，用于增量查询
+      if (result.messages.length > 0) {
+        const latestMessage = result.messages[result.messages.length - 1];
+        setLastMessageTime(latestMessage.createdAt);
+      }
     }
   };
 
-  // 检查会话是否存在
-  const checkConversationExists = async () => {
+  // 获取新消息并追加到现有消息中
+  const fetchNewMessages = async () => {
     try {
-      const result = await getMessages(conversation.id, 1, 1);
+      // 如果没有最后消息时间，使用常规查询
+      if (!lastMessageTime) {
+        const result = await getMessages(conversation.id, 1, 20);
+        if (!result) {
+          handleConversationEnded();
+          return;
+        }
+        // 检查是否有新消息需要追加
+        if (result.messages.length > 0) {
+          setMessages(result.messages);
+          setCurrentUserId(result.currentUserId);
+          const latestMessage = result.messages[result.messages.length - 1];
+          setLastMessageTime(latestMessage.createdAt);
+        }
+        return;
+      }
+
+      // 使用增量查询获取新消息
+      const result = await getNewMessages(conversation.id, lastMessageTime);
 
       if (!result) {
         // 会话不存在，显示结束消息
         handleConversationEnded();
-      } else {
-        setMessages(result.messages);
-        setCurrentUserId(result.currentUserId);
+        return;
+      }
+
+      // 如果有新消息，追加到现有消息列表
+      if (result.messages.length > 0) {
+        setMessages((prev) => {
+          // 避免重复消息
+          const existingIds = new Set(prev.map((msg) => msg.id));
+          const newMessages = result.messages.filter(
+            (msg) => !existingIds.has(msg.id)
+          );
+          return [...prev, ...newMessages];
+        });
+
+        // 更新最后消息时间
+        const latestMessage = result.messages[result.messages.length - 1];
+        setLastMessageTime(latestMessage.createdAt);
       }
     } catch (error) {
-      console.error("检查会话状态失败:", error);
+      console.error("获取新消息失败:", error);
       // 如果是404错误，说明会话已被删除
       if (
         error instanceof Error &&
@@ -135,10 +178,10 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       clearInterval(pollingIntervalRef.current);
     }
 
-    // 每5秒检查一次会话是否存在
+    // 每3秒检查一次新消息
     pollingIntervalRef.current = setInterval(() => {
       if (!conversationEnded) {
-        checkConversationExists();
+        fetchNewMessages();
       }
     }, 5000);
   };
@@ -179,6 +222,8 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
         setMessages((prev) =>
           prev.map((msg) => (msg.id === tempId ? result : msg))
         );
+        // 更新最后消息时间
+        setLastMessageTime(result.createdAt);
       } else {
         // 发送失败，移除临时消息并恢复输入内容
         setMessages((prev) => prev.filter((msg) => msg.id !== tempId));

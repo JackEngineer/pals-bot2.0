@@ -126,6 +126,28 @@ export function useChatActions() {
     }
   };
 
+  // 获取新消息（增量查询）
+  const getNewMessages = async (
+    conversationId: string,
+    after: string // 时间戳
+  ): Promise<{
+    messages: Message[];
+    currentUserId: string;
+    conversationStatus?: any;
+  } | null> => {
+    if (!user) return null;
+
+    try {
+      const data: any = await get(
+        `/api/chat/conversations/${conversationId}/messages?userId=${user.id}&after=${after}`
+      );
+      return data;
+    } catch (error) {
+      console.error("获取新消息失败:", error);
+      return null;
+    }
+  };
+
   // 发送消息
   const sendMessage = async (
     conversationId: string,
@@ -401,6 +423,7 @@ export function useChatActions() {
     getConversationById,
     createConversation,
     getMessages,
+    getNewMessages,
     sendMessage,
     startRandomChat,
     replyToBottle,

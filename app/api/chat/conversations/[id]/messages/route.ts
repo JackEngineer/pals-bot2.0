@@ -61,11 +61,24 @@ export async function GET(request: NextRequest, { params }: Context) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = (page - 1) * limit;
 
+    // 增量查询参数
+    const after = searchParams.get("after"); // 时间戳，获取此时间之后的新消息
+
+    // 构建查询条件
+    const whereClause: any = {
+      conversationId,
+    };
+
+    // 如果有after参数，只查询该时间之后的消息
+    if (after) {
+      whereClause.createdAt = {
+        gt: new Date(after),
+      };
+    }
+
     // 获取消息列表
     const messages = await prisma.message.findMany({
-      where: {
-        conversationId,
-      },
+      where: whereClause,
       include: {
         sender: {
           select: {
@@ -78,8 +91,8 @@ export async function GET(request: NextRequest, { params }: Context) {
         },
       },
       orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
+      skip: after ? 0 : skip, // 增量查询时不使用分页
+      take: after ? 100 : limit, // 增量查询时限制最多100条新消息
     });
 
     // 标记收到的消息为已读
@@ -102,7 +115,7 @@ export async function GET(request: NextRequest, { params }: Context) {
         pagination: {
           page,
           limit,
-          hasMore: messages.length === limit,
+          hasMore: after ? false : messages.length === limit, // 增量查询时不需要分页信息
         },
         currentUserId: userId,
         // 会话状态信息（用于轮询检查）
@@ -112,6 +125,9 @@ export async function GET(request: NextRequest, { params }: Context) {
           lastMessageAt: conversation.lastMessageAt,
           lastUpdatedAt: conversation.updatedAt,
         },
+        // 增量查询标识
+        isIncrementalQuery: !!after,
+        queryAfter: after,
       },
       timestamp: new Date().toISOString(),
     });
