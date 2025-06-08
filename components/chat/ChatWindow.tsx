@@ -93,6 +93,9 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       if (!result) {
         // 会话不存在，显示结束消息
         handleConversationEnded();
+      } else {
+        setMessages(result.messages);
+        setCurrentUserId(result.currentUserId);
       }
     } catch (error) {
       console.error("检查会话状态失败:", error);
