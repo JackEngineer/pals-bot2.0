@@ -200,17 +200,19 @@ body {
 /* 输入框海洋主题 */
 .input-ocean {
   border: 2px solid rgba(14, 165, 233, 0.2);
-  /* background: rgba(255, 255, 255, 0.9); */
+  background: rgba(255, 255, 255, 0.9);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   /* 使用Telegram主题颜色作为备选 */
-  color: var(--tg-theme-text-color, #075985) !important;
-  background: var(--tg-theme-bg-color, rgba(255, 255, 255, 0.9)) !important;
+  color: #075985 !important;
+  /* color: var(--tg-theme-text-color, #075985) !important; */
+  /* background: var(--tg-theme-bg-color, rgba(255, 255, 255, 0.9)) !important; */
 }
 
 .input-ocean::placeholder {
-  color: var(--tg-theme-hint-color, #38bdf8) !important;
+  color: #38bdf8 !important;
+  /* color: var(--tg-theme-hint-color, #38bdf8) !important; */
 }
 
 .input-ocean:focus {
