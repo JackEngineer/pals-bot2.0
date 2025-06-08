@@ -59,7 +59,7 @@ function isValidUrl(url: string) {
  * @param userId 当前用户ID
  * @returns 随机漂流瓶或 null
  */
-export async function getRandomBottle(userId: string): Promise<Bottle | null> {
+export async function getRandomBottle(userId: string): Promise<any | null> {
   // 先取 20 个活跃且不是自己的瓶子，再前端随机
   const bottles = await prisma.bottle.findMany({
     where: {

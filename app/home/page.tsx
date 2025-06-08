@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import BottleCard from "@/components/bottles/BottleCard";
 import BottleEditor from "@/components/bottles/BottleEditor";
 import { BottleReplyModal } from "@/components/bottles/BottleReplyModal";
 import { useBottleActions } from "@/hooks/useBottleActions";
 import { useChatActions } from "@/hooks/useChatActions";
-import { useUserStore } from "@/hooks/useUserStore";
 import { useStats } from "@/hooks/useStats";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useRouter } from "next/navigation";
 import "./page.css";
 
@@ -34,18 +34,17 @@ interface BottleData {
 }
 
 export default function Home() {
+  // 🔐 认证检查 - 如果用户未登录，自动重定向到登录页
+  const { isAuthenticated } = useAuthRedirect();
+
   const [showEditor, setShowEditor] = useState(false);
   const [currentBottle, setCurrentBottle] = useState<BottleData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [floatingBottles, setFloatingBottles] = useState<BottleData[]>([]);
-
   // 回复相关状态
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [replyBottle, setReplyBottle] = useState<BottleData | null>(null);
 
   const { throwBottle, pickBottle, loading } = useBottleActions();
   const { createConversation, replyToBottle } = useChatActions();
-  const { user, setUser } = useUserStore();
   const {
     stats,
     loading: statsLoading,
@@ -53,54 +52,25 @@ export default function Home() {
     refresh: refreshStats,
   } = useStats();
   const router = useRouter();
-  // 模拟漂流瓶数据
-  const mockBottles: BottleData[] = [
-    {
-      id: "1",
-      content:
-        "今天看到海边的日落，突然想起小时候和爷爷一起看夕阳的时光。那些温暖的回忆，就像这个瓶子一样，希望能飘到需要温暖的人那里。",
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2小时前
-      bottleStyle: { color: "ocean", pattern: "gradient", decoration: "waves" },
-      userId: "user1",
-      author: { firstName: "小明" },
-    },
-    {
-      id: "2",
-      content:
-        "失恋了，心情很低落。但是生活还要继续，希望遇到这个瓶子的人都能开开心心的。愿世界温柔以待每一个善良的人。",
-      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5小时前
-      bottleStyle: {
-        color: "deepblue",
-        pattern: "solid",
-        decoration: "hearts",
-      },
-      userId: "user2",
-      author: { firstName: "小红" },
-    },
-    {
-      id: "3",
-      content:
-        "今天是我的生日！虽然一个人过，但是很开心。许了一个愿望：希望所有孤独的人都能找到属于自己的那份温暖。",
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1天前
-      bottleStyle: { color: "aqua", pattern: "dotted", decoration: "stars" },
-      userId: "user3",
-      author: { firstName: "小李" },
-    },
-  ];
 
-  useEffect(() => {
-    // 初始化浮动瓶子
-    setFloatingBottles(mockBottles.slice(0, 3));
-  }, []);
+  // 如果用户未登录，显示加载状态（实际会自动重定向）
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-ocean-light flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4 animate-bounce">🌊</div>
+          <p className="text-ocean-600">正在跳转到登录页面...</p>
+        </div>
+      </div>
+    );
+  }
 
   /**
    * 捞瓶子
    */
   const handlePickBottle = async () => {
-    console.log("handlePickBottle", loading);
-    // if (loading) return;
+    if (loading) return;
     const bottle = await pickBottle();
-    console.log("pickBottle", bottle);
     if (bottle) {
       setCurrentBottle(bottle);
     }
@@ -122,8 +92,6 @@ export default function Home() {
     console.log("投递漂流瓶:", { content, mediaType, mediaUrl, bottleStyle });
     await throwBottle(content, mediaType, mediaUrl, bottleStyle);
     setShowEditor(false);
-    // 显示成功提示（可以考虑添加toast组件）
-    // toast.success("🌊 漂流瓶已经投入大海，祝它找到有缘人！");
   };
 
   /**

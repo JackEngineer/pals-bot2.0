@@ -21,6 +21,7 @@ interface Message {
   isRead: boolean;
   senderId: string;
   sender: User;
+  messageType?: string;
 }
 
 interface Conversation {
@@ -62,12 +63,14 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const handleSendMessage = async () => {
     if (!inputValue.trim() || sending) return;
 
+    const tempId = `temp-${Date.now()}`;
+
     try {
       setSending(true);
 
       // 立即添加到本地状态以提供即时反馈
       const tempMessage: Message = {
-        id: `temp-${Date.now()}`,
+        id: tempId,
         content: inputValue.trim(),
         mediaType: "TEXT",
         createdAt: new Date().toISOString(),
@@ -91,17 +94,17 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       if (result) {
         // 替换临时消息为真实消息
         setMessages((prev) =>
-          prev.map((msg) => (msg.id === tempMessage.id ? result : msg))
+          prev.map((msg) => (msg.id === tempId ? result : msg))
         );
       } else {
         // 发送失败，移除临时消息并恢复输入内容
-        setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id));
+        setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
         setInputValue(messageContent);
       }
     } catch (error) {
       console.error("发送消息失败:", error);
       // 移除临时消息
-      setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id));
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
     } finally {
       setSending(false);
     }
