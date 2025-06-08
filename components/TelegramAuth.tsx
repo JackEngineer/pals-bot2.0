@@ -196,12 +196,6 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
                 "进入漂流瓶"
               )}
             </button>
-            <button
-              onClick={logout}
-              className="bg-ocean-100 hover:bg-ocean-200 text-ocean-700 font-medium py-3 px-4 rounded-xl text-sm transition-colors"
-            >
-              登出
-            </button>
           </div>
         </div>
       </div>
