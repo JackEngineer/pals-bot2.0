@@ -89,7 +89,17 @@ interface ChatStatusStore {
   cleanExpiredCache: () => void;
   clearAllCache: () => void;
   updateConfig: (newConfig: Partial<CacheConfig>) => void;
-  getCacheStats: () => typeof store.stats;
+  getCacheStats: () => {
+    hitCount: number;
+    missCount: number;
+    totalRequests: number;
+    cacheSize: number;
+    lastCleanup: number;
+    hitRate: number;
+    conversationCacheCount: number;
+    messageCacheCount: number;
+    userCacheCount: number;
+  };
 
   // 智能预取
   preloadConversationStatus: (id: string) => Promise<ConversationStatus | null>;
@@ -508,18 +518,7 @@ export const useChatStatusStore = create<ChatStatusStore>()(
     }),
     {
       name: "chat-status-storage",
-      storage: createJSONStorage(() => {
-        // 只在启用持久化时使用localStorage
-        const state = get?.();
-        if (state?.config?.enablePersistence !== false) {
-          return localStorage;
-        }
-        return {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        };
-      }),
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         // 只持久化会话状态和用户缓存，消息缓存不持久化
         conversationStatuses: state.conversationStatuses,

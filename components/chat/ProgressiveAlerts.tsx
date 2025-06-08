@@ -855,5 +855,4 @@ export default function ProgressiveAlerts({
 }
 
 // 导出类型和枚举
-export type { Alert, AlertAction, AlertGroupConfig, I18nMessages };
-export { AlertLevel, AlertPosition, AlertBehavior };
+export type { I18nMessages };

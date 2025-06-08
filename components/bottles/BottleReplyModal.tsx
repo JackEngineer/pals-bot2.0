@@ -10,7 +10,7 @@ interface BottleData {
   content: string;
   mediaType?: "text" | "image" | "audio";
   mediaUrl?: string;
-  createdAt: Date;
+  createdAt: string;
   userId?: string; // 添加userId字段用于聊天
   author?: {
     firstName: string;
@@ -28,7 +28,7 @@ interface BottleData {
 
 interface BottleReplyModalProps {
   isOpen: boolean;
-  bottle: BottleData | null;
+  bottle: BottleData;
   onClose: () => void;
   onReplyAndChat: (replyContent: string) => Promise<void>;
 }

@@ -754,8 +754,15 @@ class PerformanceAnalytics {
   }
 }
 
-// 全局分析器实例
-const analytics = new PerformanceAnalytics();
+// 延迟初始化的全局分析器实例
+let analytics: PerformanceAnalytics | null = null;
+
+const getAnalytics = () => {
+  if (!analytics && typeof window !== "undefined") {
+    analytics = new PerformanceAnalytics();
+  }
+  return analytics;
+};
 
 // 导出便利函数
 export const recordApiResponse = (
@@ -763,15 +770,23 @@ export const recordApiResponse = (
   method: string,
   statusCode: number,
   responseTime: number,
-  options?: Parameters<typeof analytics.recordApiResponse>[4]
-) =>
-  analytics.recordApiResponse(
-    endpoint,
-    method,
-    statusCode,
-    responseTime,
-    options
-  );
+  options?: {
+    responseSize?: number;
+    cached?: boolean;
+    retryCount?: number;
+  }
+) => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    analyticsInstance.recordApiResponse(
+      endpoint,
+      method,
+      statusCode,
+      responseTime,
+      options
+    );
+  }
+};
 
 export const recordPollingFrequency = (
   pollingType: string,
@@ -780,52 +795,139 @@ export const recordPollingFrequency = (
   userActivity: string,
   tabVisibility: boolean,
   conversationCount: number
-) =>
-  analytics.recordPollingFrequency(
-    pollingType,
-    intervalMs,
-    networkQuality,
-    userActivity,
-    tabVisibility,
-    conversationCount
-  );
+) => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    analyticsInstance.recordPollingFrequency(
+      pollingType,
+      intervalMs,
+      networkQuality,
+      userActivity,
+      tabVisibility,
+      conversationCount
+    );
+  }
+};
 
 export const recordError = (
   category: ErrorCategory,
   errorCode: string,
   errorMessage: string,
-  options?: Parameters<typeof analytics.recordError>[3]
-) => analytics.recordError(category, errorCode, errorMessage, options);
+  options?: {
+    stackTrace?: string;
+    endpoint?: string;
+    networkState?: string;
+  }
+) => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    analyticsInstance.recordError(category, errorCode, errorMessage, options);
+  }
+};
 
 export const recordUserExperience = (
   quality: UXQuality,
   category: string,
-  options?: Parameters<typeof analytics.recordUserExperience>[2]
-) => analytics.recordUserExperience(quality, category, options);
+  options?: {
+    messageDelay?: number;
+    connectionStatus?: string;
+    loadingTime?: number;
+    interactionType?: string;
+  }
+) => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    analyticsInstance.recordUserExperience(quality, category, options);
+  }
+};
 
 export const recordResourceUsage = (
   resourceType: "memory" | "cpu" | "network" | "storage",
   currentValue: number,
-  options?: Parameters<typeof analytics.recordResourceUsage>[2]
-) => analytics.recordResourceUsage(resourceType, currentValue, options);
-
-export const getAggregatedStats = (timeRangeMs?: number) =>
-  analytics.getAggregatedStats(timeRangeMs);
-export const getRealTimeMetrics = () => analytics.getRealTimeMetrics();
-export const exportMetrics = (format?: "json" | "csv") =>
-  analytics.exportMetrics(format);
-export const setUserId = (userId: string) => analytics.setUserId(userId);
-
-// 导出类型和枚举
-export type {
-  BaseMetric,
-  ApiResponseTimeMetric,
-  PollingFrequencyMetric,
-  ErrorRateMetric,
-  UserExperienceMetric,
-  ResourceUsageMetric,
-  AggregatedStats,
+  options?: {
+    peak?: number;
+    average?: number;
+    duration?: number;
+  }
+) => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    analyticsInstance.recordResourceUsage(resourceType, currentValue, options);
+  }
 };
 
-// 导出默认分析器实例
-export default analytics;
+export const getAggregatedStats = (timeRangeMs?: number) => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    return analyticsInstance.getAggregatedStats(timeRangeMs);
+  }
+  // 返回默认的空统计数据
+  return {
+    timeRange: {
+      start: Date.now() - (timeRangeMs || 3600000),
+      end: Date.now(),
+      duration: timeRangeMs || 3600000,
+    },
+    apiStats: {
+      totalRequests: 0,
+      averageResponseTime: 0,
+      successRate: 100,
+      errorsByCategory: {} as Record<ErrorCategory, number>,
+      slowestEndpoints: [],
+    },
+    pollingStats: {
+      averageFrequency: 0,
+      totalPolls: 0,
+      adaptationCount: 0,
+      networkAdaptations: 0,
+    },
+    userExperienceStats: {
+      overallQuality: UXQuality.FAIR,
+      qualityDistribution: {} as Record<UXQuality, number>,
+      averageMessageDelay: 0,
+      connectionStability: 100,
+    },
+    resourceStats: {
+      peakMemoryUsage: 0,
+      averageCpuUsage: 0,
+      networkDataTransferred: 0,
+      cacheHitRate: 0,
+    },
+  };
+};
+
+export const getRealTimeMetrics = () => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    return analyticsInstance.getRealTimeMetrics();
+  }
+  // 返回默认的实时指标
+  return {
+    currentApiLoad: 0,
+    currentPollingFreq: 0,
+    recentErrorRate: 0,
+    currentUXQuality: UXQuality.FAIR,
+    memoryUsage: 0,
+  };
+};
+
+export const exportMetrics = (format?: "json" | "csv") => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    return analyticsInstance.exportMetrics(format);
+  }
+  return format === "csv" ? "" : "[]";
+};
+
+export const setUserId = (userId: string) => {
+  const analyticsInstance = getAnalytics();
+  if (analyticsInstance) {
+    analyticsInstance.setUserId(userId);
+  }
+};
+
+// 导出类型和枚举
+// 所有接口和枚举已通过声明时的export关键字导出
+
+// 导出默认分析器获取函数
+export default getAnalytics;

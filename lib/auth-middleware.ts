@@ -1,7 +1,7 @@
 "use client";
 
 import { NextRequest, NextResponse } from "next/server";
-import { validateTelegramInitData } from "./telegram-auth";
+import { verifyTelegramAuth } from "./telegram-auth";
 
 // 权限等级枚举
 export enum PermissionLevel {
@@ -206,7 +206,7 @@ class SecurityManager {
       }
 
       const initData = authHeader.replace("Bearer ", "");
-      const validation = validateTelegramInitData(
+      const validation = verifyTelegramAuth(
         initData,
         process.env.TELEGRAM_BOT_TOKEN!
       );
@@ -219,7 +219,15 @@ class SecurityManager {
         };
       }
 
-      const user = validation.data.user;
+      const user = validation.user;
+      if (!user) {
+        return {
+          isValid: false,
+          error: "MISSING_USER_DATA",
+          timestamp: Date.now(),
+        };
+      }
+
       return {
         isValid: true,
         user: {
@@ -636,4 +644,4 @@ export async function verifyPermissions(
 export { securityManager };
 
 // 导出权限等级和操作类型（用于其他模块）
-export { PermissionLevel, OperationType };
+// 枚举已通过声明时的export关键字导出

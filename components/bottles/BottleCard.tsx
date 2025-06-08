@@ -7,7 +7,7 @@ interface BottleData {
   content: string;
   mediaType?: "text" | "image" | "audio";
   mediaUrl?: string;
-  createdAt: Date;
+  createdAt: string;
   bottleStyle?: {
     color: string;
     pattern: string;

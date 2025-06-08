@@ -4,6 +4,16 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatActions } from "@/hooks/useChatActions";
 import { ConversationEndedModal } from "./ConversationEndedModal";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface User {
   id: string;
@@ -42,6 +52,8 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [conversationEnded, setConversationEnded] = useState(false);
   const [showEndedMessage, setShowEndedMessage] = useState(false);
+  const [showEndConversationDialog, setShowEndConversationDialog] =
+    useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -211,70 +223,73 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   };
 
   // 处理结束会话
-  const handleEndConversation = async () => {
-    const confirmed = confirm(
-      "确定要结束这个会话吗？所有消息记录将被删除，此操作无法撤销。"
-    );
+  const handleEndConversation = () => {
+    setShowEndConversationDialog(true);
+  };
 
-    if (!confirmed) return;
+  // 确认结束会话
+  const confirmEndConversation = async () => {
+    setShowEndConversationDialog(false);
 
     try {
       const success = await deleteConversation(conversation.id);
 
       if (success) {
         // 显示成功提示
-        alert("会话已结束");
+        toast.success("会话已结束");
         // 返回聊天列表
         onBack();
       } else {
-        alert("结束会话失败，请重试");
+        toast.error("结束会话失败，请重试");
       }
     } catch (error) {
       console.error("结束会话失败:", error);
-      alert("结束会话失败，请重试");
+      toast.error("结束会话失败，请重试");
     }
   };
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-blue-50 to-white">
       {/* 聊天头部 */}
-      <div className="bottle-card border-b p-4 flex items-center space-x-3 rounded-none">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-blue-100 rounded-full transition-colors"
-        >
-          <svg
-            className="w-5 h-5 text-blue-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+      <div className="bottle-card border-b p-4 flex items-center space-x-3 rounded-none justify-between">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={onBack}
+            className="p-2 hover:bg-blue-100 rounded-full transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
 
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center overflow-hidden">
-          {conversation.otherUser.avatarUrl ? (
-            <img
-              src={conversation.otherUser.avatarUrl}
-              alt={getUserDisplayName(conversation.otherUser)}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-white font-medium">
-              {/* {conversation.otherUser.firstName.charAt(0)} */}匿
-            </span>
-          )}
-        </div>
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center overflow-hidden">
+            {conversation.otherUser.avatarUrl ? (
+              <img
+                src={conversation.otherUser.avatarUrl}
+                alt={getUserDisplayName(conversation.otherUser)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-white font-medium">
+                {/* {conversation.otherUser.firstName.charAt(0)} */}匿
+              </span>
+            )}
+          </div>
 
-        <div>
-          <h3 className="font-medium text-gray-900">匿名用户</h3>
-          <p className="text-xs text-gray-500">匿名聊天</p>
+          <div>
+            <h3 className="font-medium text-gray-900">匿名用户</h3>
+            <p className="text-xs text-gray-500">匿名聊天</p>
+          </div>
         </div>
         {/*增加一个销毁按钮，点击后销毁会话 */}
         <button
@@ -282,7 +297,7 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
           onClick={handleEndConversation}
           disabled={loading}
         >
-          {"结束会话"}
+          结束会话
         </button>
       </div>
 
@@ -425,6 +440,42 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
           </button>
         </div>
       </div>
+
+      {/* 结束会话确认对话框 */}
+      <Dialog
+        open={showEndConversationDialog}
+        onOpenChange={setShowEndConversationDialog}
+      >
+        <DialogContent variant="ocean" size="sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">结束会话</DialogTitle>
+            <DialogDescription className="text-center">
+              确定要结束这个会话吗？
+              <br />
+              <span className="text-red-500 font-medium">
+                所有消息记录将被删除，此操作无法撤销。
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowEndConversationDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmEndConversation}
+              className="w-full sm:w-auto"
+            >
+              确认结束
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

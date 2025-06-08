@@ -267,6 +267,7 @@ export function useStateRecovery(
           {
             ...RETRY_CONFIGS.NETWORK,
             maxAttempts: 2, // 恢复任务使用较少的重试次数
+            retryableErrors: [...RETRY_CONFIGS.NETWORK.retryableErrors], // 创建可变副本
           },
           `recovery_${task.type}`
         );

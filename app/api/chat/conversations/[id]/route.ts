@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 interface Context {
   params: {
     id: string;
@@ -10,7 +12,7 @@ interface Context {
 // DELETE /api/chat/conversations/[id] - 删除会话（事务优化版本）
 export async function DELETE(request: NextRequest, { params }: Context) {
   try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
     const conversationId = params.id;
 

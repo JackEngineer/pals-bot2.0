@@ -215,22 +215,28 @@ class TabCoordinator {
         this.handleTabUnregister(data);
         break;
       case MessageType.MASTER_ELECTION:
-        this.handleMasterElection(data);
+        // TODO: 实现 handleMasterElection 方法
+        // this.handleMasterElection(data);
         break;
       case MessageType.TASK_ASSIGNMENT:
-        this.handleTaskAssignment(data);
+        // TODO: 实现 handleTaskAssignment 方法
+        // this.handleTaskAssignment(data);
         break;
       case MessageType.TASK_RESULT:
-        this.handleTaskResult(data);
+        // TODO: 实现 handleTaskResult 方法
+        // this.handleTaskResult(data);
         break;
       case MessageType.RESOURCE_REQUEST:
-        this.handleResourceRequest(data);
+        // TODO: 实现 handleResourceRequest 方法
+        // this.handleResourceRequest(data);
         break;
       case MessageType.RESOURCE_RESPONSE:
-        this.handleResourceResponse(data);
+        // TODO: 实现 handleResourceResponse 方法
+        // this.handleResourceResponse(data);
         break;
       case MessageType.COORDINATION_UPDATE:
-        this.handleCoordinationUpdate(data);
+        // TODO: 实现 handleCoordinationUpdate 方法
+        // this.handleCoordinationUpdate(data);
         break;
     }
 
@@ -876,13 +882,4 @@ export function createTabCoordinator(channelName?: string): TabCoordinator {
   return new TabCoordinator(channelName);
 }
 
-// 导出类型和枚举
-export type {
-  TabInfo,
-  TabCapabilities,
-  TaskAssignment,
-  CoordinationStatus,
-  ResourceRequest,
-};
-export { TaskType, MessageType, ResourceType };
 export default TabCoordinator;

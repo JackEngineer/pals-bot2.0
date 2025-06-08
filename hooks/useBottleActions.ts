@@ -9,7 +9,7 @@ interface BottleData {
   content: string;
   mediaType?: "text" | "image" | "audio";
   mediaUrl?: string;
-  createdAt: Date;
+  createdAt: string;
   userId?: string; // 添加userId字段用于聊天
   author?: {
     firstName: string;

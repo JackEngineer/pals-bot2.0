@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import prisma from "@/lib/database/prisma";
-import { validateTelegramInitData } from "@/lib/telegram-auth";
+import prisma from "@/lib/prisma";
+import { verifyTelegramAuth } from "@/lib/telegram-auth";
 
 // 批量状态查询请求体验证schema
 const BatchStatusSchema = z.object({
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const initData = authHeader.replace("Bearer ", "");
-    const validation = validateTelegramInitData(
+    const validation = verifyTelegramAuth(
       initData,
       process.env.TELEGRAM_BOT_TOKEN!
     );
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const telegramUser = validation.data.user;
+    const telegramUser = validation.user!;
 
     // 验证请求体
     const body = await request.json();
@@ -81,25 +81,20 @@ export async function POST(request: NextRequest) {
         id: {
           in: conversationIds,
         },
-        // 确保用户是会话参与者
-        OR: [
-          { user1TelegramId: telegramUser.id },
-          { user2TelegramId: telegramUser.id },
-        ],
       },
       select: {
         id: true,
         isActive: true,
         createdAt: true,
         updatedAt: true,
-        user1TelegramId: true,
-        user2TelegramId: true,
+        user1Id: true,
+        user2Id: true,
         messages: {
           select: {
             id: true,
             createdAt: true,
             isRead: true,
-            senderTelegramId: true,
+            senderId: true,
           },
           orderBy: {
             createdAt: "desc",
@@ -129,7 +124,7 @@ export async function POST(request: NextRequest) {
         const lastMessage = conversation.messages[0];
         const hasUnreadMessages = lastMessage
           ? !lastMessage.isRead &&
-            lastMessage.senderTelegramId !== telegramUser.id
+            lastMessage.senderId !== telegramUser.id.toString()
           : false;
 
         return {
@@ -211,7 +206,7 @@ export async function GET(request: NextRequest) {
     }
 
     const initData = authHeader.replace("Bearer ", "");
-    const validation = validateTelegramInitData(
+    const validation = verifyTelegramAuth(
       initData,
       process.env.TELEGRAM_BOT_TOKEN!
     );
@@ -228,15 +223,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const telegramUser = validation.data.user;
+    const telegramUser = validation.user!;
 
     // 查询用户的所有活跃会话
     const conversations = await prisma.conversation.findMany({
       where: {
         isActive: true,
         OR: [
-          { user1TelegramId: telegramUser.id },
-          { user2TelegramId: telegramUser.id },
+          { user1Id: telegramUser.id.toString() },
+          { user2Id: telegramUser.id.toString() },
         ],
       },
       select: {
@@ -244,14 +239,14 @@ export async function GET(request: NextRequest) {
         isActive: true,
         createdAt: true,
         updatedAt: true,
-        user1TelegramId: true,
-        user2TelegramId: true,
+        user1Id: true,
+        user2Id: true,
         messages: {
           select: {
             id: true,
             createdAt: true,
             isRead: true,
-            senderTelegramId: true,
+            senderId: true,
           },
           orderBy: {
             createdAt: "desc",
@@ -270,7 +265,7 @@ export async function GET(request: NextRequest) {
         const lastMessage = conversation.messages[0];
         const hasUnreadMessages = lastMessage
           ? !lastMessage.isRead &&
-            lastMessage.senderTelegramId !== telegramUser.id
+            lastMessage.senderId !== telegramUser.id.toString()
           : false;
 
         return {

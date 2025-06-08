@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   useNetworkStatus,
   NetworkQuality,
-  ConnectionState,
+  ConnectionType,
 } from "@/hooks/useNetworkStatus";
-import { usePollingManager, PollingState } from "@/hooks/usePollingManager";
+import { usePollingManager, ActivityLevel } from "@/hooks/usePollingManager";
 import { getTabCoordinator, CoordinationStatus } from "@/lib/tab-coordinator";
 import { getRealTimeMetrics, UXQuality } from "@/lib/analytics";
 
@@ -44,10 +44,10 @@ export interface StatusAction {
 // 网络状态映射
 const getNetworkStatusInfo = (
   quality: NetworkQuality,
-  state: ConnectionState,
-  latency: number
+  isOnline: boolean,
+  latency: number | null
 ): StatusInfo => {
-  if (state === ConnectionState.OFFLINE) {
+  if (!isOnline) {
     return {
       level: StatusLevel.OFFLINE,
       title: "离线状态",
@@ -63,21 +63,14 @@ const getNetworkStatusInfo = (
     };
   }
 
-  if (state === ConnectionState.SLOW) {
-    return {
-      level: StatusLevel.WARNING,
-      title: "网络较慢",
-      message: `延迟 ${latency}ms`,
-      details: ["消息发送可能延迟", "建议检查网络环境"],
-    };
-  }
+  const latencyText = latency !== null ? `延迟 ${latency}ms` : "检测中...";
 
   switch (quality) {
     case NetworkQuality.EXCELLENT:
       return {
         level: StatusLevel.EXCELLENT,
         title: "网络优秀",
-        message: `延迟 ${latency}ms`,
+        message: latencyText,
         details: ["连接稳定", "响应迅速"],
       };
 
@@ -85,23 +78,23 @@ const getNetworkStatusInfo = (
       return {
         level: StatusLevel.GOOD,
         title: "网络良好",
-        message: `延迟 ${latency}ms`,
+        message: latencyText,
         details: ["连接正常"],
       };
 
-    case NetworkQuality.FAIR:
+    case NetworkQuality.SLOW:
       return {
         level: StatusLevel.WARNING,
-        title: "网络一般",
-        message: `延迟 ${latency}ms`,
-        details: ["可能有轻微延迟"],
+        title: "网络较慢",
+        message: latencyText,
+        details: ["消息发送可能延迟", "建议检查网络环境"],
       };
 
     case NetworkQuality.POOR:
       return {
         level: StatusLevel.ERROR,
         title: "网络较差",
-        message: `延迟 ${latency}ms`,
+        message: latencyText,
         details: ["连接不稳定", "消息可能延迟"],
       };
 
@@ -117,51 +110,53 @@ const getNetworkStatusInfo = (
 
 // 轮询状态映射
 const getPollingStatusInfo = (
-  state: PollingState,
+  activityLevel: ActivityLevel,
   frequency: number,
-  adaptationCount: number
+  isPollingActive: boolean
 ): StatusInfo => {
-  const frequencyText =
-    frequency > 0 ? `${(1000 / frequency).toFixed(1)}次/秒` : "已暂停";
+  const frequencyText = frequency > 0 ? `间隔 ${frequency}ms` : "已暂停";
 
-  switch (state) {
-    case PollingState.ACTIVE:
+  if (!isPollingActive) {
+    return {
+      level: StatusLevel.WARNING,
+      title: "轮询暂停",
+      message: "已暂停",
+      details: ["轮询已被手动暂停"],
+    };
+  }
+
+  switch (activityLevel) {
+    case ActivityLevel.VERY_ACTIVE:
+    case ActivityLevel.TYPING:
+      return {
+        level: StatusLevel.EXCELLENT,
+        title: "轮询高频",
+        message: frequencyText,
+        details: ["高活跃度，快速轮询"],
+      };
+
+    case ActivityLevel.ACTIVE:
       return {
         level: StatusLevel.GOOD,
         title: "轮询活跃",
         message: frequencyText,
-        details: [`已自适应 ${adaptationCount} 次`],
+        details: ["正常活跃状态"],
       };
 
-    case PollingState.SLOW:
+    case ActivityLevel.IDLE:
       return {
         level: StatusLevel.WARNING,
         title: "轮询降频",
         message: frequencyText,
-        details: ["为节省资源已降低频率"],
+        details: ["用户空闲，降低频率节省资源"],
       };
 
-    case PollingState.PAUSED:
+    case ActivityLevel.HIDDEN:
       return {
         level: StatusLevel.WARNING,
         title: "轮询暂停",
         message: "页面不可见",
         details: ["切换到页面时将恢复"],
-      };
-
-    case PollingState.ERROR:
-      return {
-        level: StatusLevel.ERROR,
-        title: "轮询错误",
-        message: "连接失败",
-        details: ["正在尝试重新连接"],
-        actions: [
-          {
-            label: "立即重试",
-            action: () => window.location.reload(),
-            type: "primary",
-          },
-        ],
       };
 
     default:
@@ -470,9 +465,9 @@ export default function ConnectionStatus({
     // 网络状态
     statusList.push(
       getNetworkStatusInfo(
-        networkStatus.quality,
-        networkStatus.state,
-        networkStatus.latency
+        networkStatus.networkState.quality,
+        networkStatus.networkState.isOnline,
+        networkStatus.networkState.latency
       )
     );
 
@@ -480,9 +475,9 @@ export default function ConnectionStatus({
     if (pollingManager) {
       statusList.push(
         getPollingStatusInfo(
-          pollingManager.state,
+          pollingManager.activityLevel,
           pollingManager.currentInterval,
-          pollingManager.adaptationCount
+          pollingManager.isPollingActive
         )
       );
     }

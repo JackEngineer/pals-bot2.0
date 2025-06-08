@@ -71,9 +71,9 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
   const getConnectionInfo = useCallback(() => {
     // @ts-ignore - Navigator.connection 在某些浏览器中可用
     const connection =
-      navigator.connection ||
-      navigator.mozConnection ||
-      navigator.webkitConnection;
+      (navigator as any).connection ||
+      (navigator as any).mozConnection ||
+      (navigator as any).webkitConnection;
 
     if (connection) {
       return {
@@ -206,7 +206,7 @@ export function useNetworkStatus(): UseNetworkStatusReturn {
   // 监听连接变化（如果支持）
   useEffect(() => {
     // @ts-ignore
-    const connection = navigator.connection;
+    const connection = (navigator as any).connection;
 
     if (connection) {
       const handleConnectionChange = () => {

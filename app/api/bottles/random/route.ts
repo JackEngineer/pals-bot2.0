@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { bottleOperations } from "@/lib/prisma";
 import { getRandomBottle } from "@/lib/database/bottles";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/bottles/random - 获取随机漂流瓶
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
 
     if (!userId) {

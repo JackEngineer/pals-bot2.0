@@ -27,7 +27,7 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   // 会话删除 - 严格限制
   "/api/chat/conversations/[id]": {
     windowMs: 300000, // 5分钟
-    maxRequests: 5, // 5次删除
+    maxRequests: 60, // 60次删除
     message: "操作过于频繁，请稍后再试",
   },
 
@@ -48,7 +48,7 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   // 认证相关 - 严格限制
   "/api/auth": {
     windowMs: 300000, // 5分钟
-    maxRequests: 10, // 10次认证
+    maxRequests: 60, // 60次认证
     message: "认证请求过于频繁，请稍后再试",
   },
 
@@ -190,36 +190,149 @@ class MemoryRateLimitStore {
 
 const rateLimitStore = new MemoryRateLimitStore();
 
-// 获取客户端IP
+// IP地址验证辅助函数
+function isValidIP(ip: string): boolean {
+  // IPv4正则表达式
+  const ipv4Regex =
+    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+
+  // IPv6正则表达式（简化版）
+  const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+
+  // 检查是否为有效IP
+  if (ipv4Regex.test(ip) || ipv6Regex.test(ip)) {
+    // 在开发环境中接受私有IP和本地IP
+    if (
+      ip.startsWith("192.168.") ||
+      ip.startsWith("10.") ||
+      ip.startsWith("172.") ||
+      ip === "127.0.0.1" ||
+      ip === "::1"
+    ) {
+      return process.env.NODE_ENV === "development";
+    }
+    return true;
+  }
+
+  return false;
+}
+
+// 获取客户端IP - 改进版本
 function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const realIP = request.headers.get("x-real-ip");
-  const remoteAddr = request.headers.get("remote-addr");
-
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
+  // 在开发环境中记录调试信息
+  if (process.env.NODE_ENV === "development") {
+    console.log("=== IP调试信息 ===");
+    console.log("所有相关头部:", {
+      "x-forwarded-for": request.headers.get("x-forwarded-for"),
+      "x-real-ip": request.headers.get("x-real-ip"),
+      "x-client-ip": request.headers.get("x-client-ip"),
+      "cf-connecting-ip": request.headers.get("cf-connecting-ip"),
+      "true-client-ip": request.headers.get("true-client-ip"),
+      "remote-addr": request.headers.get("remote-addr"),
+    });
+    console.log("request.ip:", (request as any).ip);
+    console.log("request.geo:", (request as any).geo);
+    console.log("==================");
   }
 
-  if (realIP) {
-    return realIP.trim();
+  // 尝试多种可能的IP头部（按优先级排序）
+  const headers = [
+    "x-forwarded-for",
+    "x-real-ip",
+    "x-client-ip",
+    "cf-connecting-ip", // Cloudflare
+    "true-client-ip", // Cloudflare
+    "x-forwarded",
+    "forwarded-for",
+    "forwarded",
+    "x-cluster-client-ip",
+    "remote-addr",
+    "x-original-forwarded-for",
+  ];
+
+  // 按优先级检查头部
+  for (const header of headers) {
+    const value = request.headers.get(header);
+    if (value) {
+      // 处理多个IP的情况（取第一个非私有IP）
+      const ips = value.split(",").map((ip) => ip.trim());
+
+      for (const ip of ips) {
+        if (isValidIP(ip)) {
+          return ip;
+        }
+      }
+    }
   }
 
-  if (remoteAddr) {
-    return remoteAddr.trim();
+  // 尝试从Next.js的连接信息获取
+  try {
+    const ip = (request as any).ip;
+    if (ip && isValidIP(ip)) {
+      return ip;
+    }
+  } catch {
+    // 忽略错误
+  }
+
+  // 开发环境特殊处理
+  if (process.env.NODE_ENV === "development") {
+    return "127.0.0.1";
+  }
+
+  // 尝试从geo信息获取（Vercel Edge Runtime）
+  try {
+    const geo = (request as any).geo;
+    if (geo?.city) {
+      // 如果有地理信息但没有IP，使用地理信息作为标识
+      return `geo:${geo.city}:${geo.country}`;
+    }
+  } catch {
+    // 忽略错误
+  }
+
+  // 使用用户ID作为备选标识
+  const userId = getUserId(request);
+  if (userId) {
+    return `user:${userId}`;
+  }
+
+  // 最后的备选方案：使用User-Agent的hash
+  const userAgent = request.headers.get("user-agent") || "";
+  if (userAgent) {
+    const hash = Buffer.from(userAgent).toString("base64").slice(0, 16);
+    return `ua:${hash}`;
   }
 
   return "unknown";
 }
 
-// 获取用户ID（从认证头中提取）
+// 获取用户ID（从认证头中提取）- 改进版本
 function getUserId(request: NextRequest): string | null {
   try {
     const authHeader = request.headers.get("Authorization");
     if (!authHeader) return null;
 
     const initData = authHeader.replace("Bearer ", "");
-    // 这里简化处理，实际需要解析initData获取用户ID
-    // 为了演示，我们使用initData的hash作为用户标识
+    if (!initData) return null;
+
+    // 尝试解析 Telegram InitData
+    try {
+      const params = new URLSearchParams(initData);
+      const userString = params.get("user");
+
+      if (userString) {
+        const user = JSON.parse(userString);
+        if (user.id) {
+          return user.id.toString();
+        }
+      }
+    } catch (parseError) {
+      // 如果解析失败，继续使用备选方案
+      console.warn("解析Telegram InitData失败:", parseError);
+    }
+
+    // 备选方案：使用initData的hash作为标识
     const userId = Buffer.from(initData).toString("base64").slice(0, 16);
     return userId;
   } catch {
@@ -310,6 +423,15 @@ export async function middleware(request: NextRequest) {
   const config = getConfigForPath(pathname);
   const method = request.method;
 
+  // 在开发环境中记录详细的请求信息
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      `[中间件] ${method} ${pathname} - IP: ${ip}, User: ${
+        userId || "anonymous"
+      }`
+    );
+  }
+
   // 只对写操作和高频操作进行限制
   const limitedMethods = ["POST", "PUT", "DELETE", "PATCH"];
   const isLimitedMethod = limitedMethods.includes(method);
@@ -355,7 +477,9 @@ export async function middleware(request: NextRequest) {
     if (!ipResult.allowed) {
       const retryAfter = Math.ceil((ipResult.resetTime - Date.now()) / 1000);
 
-      console.warn(`IP频率限制触发: IP=${ip}, Path=${pathname}`);
+      console.warn(
+        `IP频率限制触发: IP=${ip}, Path=${pathname}, Method=${method}`
+      );
 
       return NextResponse.json(
         {
@@ -389,7 +513,9 @@ export async function middleware(request: NextRequest) {
           (userResult.resetTime - Date.now()) / 1000
         );
 
-        console.warn(`用户频率限制触发: User=${userId}, Path=${pathname}`);
+        console.warn(
+          `用户频率限制触发: User=${userId}, Path=${pathname}, Method=${method}, IP=${ip}`
+        );
 
         return NextResponse.json(
           {

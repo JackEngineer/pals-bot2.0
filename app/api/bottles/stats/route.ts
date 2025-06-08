@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { statisticsOperations } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     // 获取查询参数中的日期（可选）
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const dateParam = searchParams.get("date");
     const date = dateParam ? new Date(dateParam) : undefined;
 

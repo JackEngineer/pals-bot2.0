@@ -296,7 +296,7 @@ export async function getBottleById(
     });
   }
 
-  return bottle;
+  return bottle as BottleWithRelations | null;
 }
 
 export async function getRandomBottles(
@@ -356,7 +356,7 @@ export async function getRandomBottles(
   ]);
 
   return {
-    data: bottles,
+    data: bottles as BottleWithRelations[],
     pagination: {
       page,
       limit,
@@ -701,10 +701,14 @@ function buildBottleFilters(filters: BottleFilters): Prisma.BottleWhereInput {
   }
 
   if (filters.dateTo) {
-    where.createdAt = {
-      ...where.createdAt,
-      lte: filters.dateTo,
-    };
+    if (where.createdAt && typeof where.createdAt === "object") {
+      where.createdAt = {
+        ...where.createdAt,
+        lte: filters.dateTo,
+      };
+    } else {
+      where.createdAt = { lte: filters.dateTo };
+    }
   }
 
   return where;

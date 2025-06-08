@@ -19,7 +19,7 @@ interface BottleData {
   content: string;
   mediaType?: "text" | "image" | "audio";
   mediaUrl?: string;
-  createdAt: Date;
+  createdAt: string;
   userId?: string; // 添加userId字段用于聊天
   author?: {
     firstName: string;
@@ -287,19 +287,21 @@ export default function Home() {
       />
 
       {/* 漂流瓶回复弹窗 */}
-      <BottleReplyModal
-        isOpen={showReplyModal}
-        bottle={replyBottle}
-        onClose={() => {
-          // 关闭弹窗，并清空状态
-          setShowReplyModal(false);
-          // 清空回复瓶子
-          setReplyBottle(null);
-          // 清空当前漂流瓶
-          setCurrentBottle(null);
-        }}
-        onReplyAndChat={handleReplyAndChat}
-      />
+      {replyBottle && (
+        <BottleReplyModal
+          isOpen={showReplyModal}
+          bottle={replyBottle}
+          onClose={() => {
+            // 关闭弹窗，并清空状态
+            setShowReplyModal(false);
+            // 清空回复瓶子
+            setReplyBottle(null);
+            // 清空当前漂流瓶
+            setCurrentBottle(null);
+          }}
+          onReplyAndChat={handleReplyAndChat}
+        />
+      )}
     </div>
   );
 }

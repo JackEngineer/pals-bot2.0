@@ -258,11 +258,11 @@ export function useChatActions() {
 
             // 重试前再次检查会话状态
             try {
-              const recheckStatus = await get(
-                `/api/chat/conversations/${conversationId}/messages?userId=${user.id}&limit=1`
-              );
+              const recheckStatus = (await get(
+                `/api/chat/conversations/${conversationId}/detail?userId=${user.id}`
+              )) as Conversation & { isActive?: boolean };
 
-              if (!recheckStatus || !recheckStatus.conversation?.isActive) {
+              if (!recheckStatus || recheckStatus.isActive === false) {
                 console.error("重试前检查发现会话已不可用");
                 return null;
               }
