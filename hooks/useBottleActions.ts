@@ -10,6 +10,14 @@ interface BottleData {
   mediaType?: "text" | "image" | "audio";
   mediaUrl?: string;
   createdAt: Date;
+  userId?: string; // 添加userId字段用于聊天
+  author?: {
+    firstName: string;
+  };
+  stats?: {
+    replies: number;
+    discoveries: number;
+  };
   bottleStyle?: {
     color: string;
     pattern: string;
@@ -55,7 +63,7 @@ export function useBottleActions() {
       setLoading(false);
       router.push("/");
       return null;
-    };
+    }
     try {
       const bottle: any = await get(`/api/bottles/random?userId=${user.id}`);
       if (bottle) {
@@ -65,6 +73,9 @@ export function useBottleActions() {
           mediaType: bottle.mediaType,
           mediaUrl: bottle.mediaUrl,
           createdAt: bottle.createdAt,
+          userId: bottle.userId, // 添加userId
+          author: bottle.author, // 添加author信息
+          stats: bottle.stats, // 添加统计信息
           bottleStyle: bottle.bottleStyle,
         };
       }

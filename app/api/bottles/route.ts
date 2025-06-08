@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
         mediaUrl: bottle.mediaUrl,
         bottleStyle: bottle.bottleStyle,
         createdAt: bottle.createdAt,
+        userId: bottle.userId, // 添加userId用于创建聊天会话
         author: {
           firstName: bottle.user.firstName, // 保持部分匿名
         },

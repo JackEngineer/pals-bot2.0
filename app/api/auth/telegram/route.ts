@@ -5,12 +5,32 @@ import { verifyTelegramAuth } from "@/lib/telegram-auth";
 const MOCK_USER = {
   id: 12345678912,
   first_name: "张",
-  last_name: "三",
+  last_name: "某人",
   username: "zhangsan",
   language_code: "zh",
   is_premium: false,
   photo_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=zhangsan",
 };
+
+// const MOCK_USER = {
+//   id: 12345678913,
+//   first_name: "张",
+//   last_name: "六六",
+//   username: "zhangsan",
+//   language_code: "zh",
+//   is_premium: false,
+//   photo_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=zhangsan",
+// };
+
+// const MOCK_USER = {
+//   id: 12345678911,
+//   first_name: "张",
+//   last_name: "菲菲",
+//   username: "zhangsan",
+//   language_code: "zh",
+//   is_premium: false,
+//   photo_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=zhangsan",
+// };
 
 export async function POST(request: NextRequest) {
   try {

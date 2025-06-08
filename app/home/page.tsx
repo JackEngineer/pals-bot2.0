@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import BottleCard from "@/components/bottles/BottleCard";
 import BottleEditor from "@/components/bottles/BottleEditor";
+import { BottleReplyModal } from "@/components/bottles/BottleReplyModal";
 import { useBottleActions } from "@/hooks/useBottleActions";
+import { useChatActions } from "@/hooks/useChatActions";
+import { useUserStore } from "@/hooks/useUserStore";
+import { useRouter } from "next/navigation";
 import "./page.css";
 
 // 模拟数据接口
@@ -13,6 +17,14 @@ interface BottleData {
   mediaType?: "text" | "image" | "audio";
   mediaUrl?: string;
   createdAt: Date;
+  userId?: string; // 添加userId字段用于聊天
+  author?: {
+    firstName: string;
+  };
+  stats?: {
+    replies: number;
+    discoveries: number;
+  };
   bottleStyle?: {
     color: string;
     pattern: string;
@@ -26,7 +38,14 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [floatingBottles, setFloatingBottles] = useState<BottleData[]>([]);
 
+  // 回复相关状态
+  const [showReplyModal, setShowReplyModal] = useState(false);
+  const [replyBottle, setReplyBottle] = useState<BottleData | null>(null);
+
   const { throwBottle, pickBottle, loading } = useBottleActions();
+  const { createConversation, replyToBottle } = useChatActions();
+  const { user, setUser } = useUserStore();
+  const router = useRouter();
   // 模拟漂流瓶数据
   const mockBottles: BottleData[] = [
     {
@@ -35,6 +54,8 @@ export default function Home() {
         "今天看到海边的日落，突然想起小时候和爷爷一起看夕阳的时光。那些温暖的回忆，就像这个瓶子一样，希望能飘到需要温暖的人那里。",
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2小时前
       bottleStyle: { color: "ocean", pattern: "gradient", decoration: "waves" },
+      userId: "user1",
+      author: { firstName: "小明" },
     },
     {
       id: "2",
@@ -46,6 +67,8 @@ export default function Home() {
         pattern: "solid",
         decoration: "hearts",
       },
+      userId: "user2",
+      author: { firstName: "小红" },
     },
     {
       id: "3",
@@ -53,6 +76,8 @@ export default function Home() {
         "今天是我的生日！虽然一个人过，但是很开心。许了一个愿望：希望所有孤独的人都能找到属于自己的那份温暖。",
       createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1天前
       bottleStyle: { color: "aqua", pattern: "dotted", decoration: "stars" },
+      userId: "user3",
+      author: { firstName: "小李" },
     },
   ];
 
@@ -98,8 +123,51 @@ export default function Home() {
    * 回复瓶子
    */
   const handleReply = () => {
-    // 跳转到聊天页面
-    window.location.href = "/chat";
+    if (currentBottle) {
+      setReplyBottle(currentBottle);
+      setShowReplyModal(true);
+    }
+  };
+
+  /**
+   * 处理回复提交
+   */
+  const handleReplySubmit = async (replyContent: string) => {
+    if (!replyBottle) return;
+
+    // 发送回复到服务器
+    const result = await replyToBottle(replyBottle.id, replyContent);
+    if (result) {
+      console.log("回复成功:", result);
+    }
+  };
+
+  /**
+   * 发起聊天
+   */
+  const handleStartChat = async (bottle: BottleData) => {
+    if (!bottle.userId) {
+      console.error("漂流瓶缺少用户信息");
+      return;
+    }
+
+    // 创建会话，并传递瓶子上下文
+    const conversation = await createConversation(bottle.userId, {
+      content: bottle.content,
+      author: bottle.author,
+      bottleId: bottle.id,
+      mediaType: bottle.mediaType,
+      mediaUrl: bottle.mediaUrl,
+    });
+
+    if (conversation) {
+      // 关闭弹窗
+      setShowReplyModal(false);
+      setCurrentBottle(null);
+
+      // 跳转到聊天页面
+      router.push(`/chat?conversation=${conversation.id}`);
+    }
   };
 
   return (
@@ -137,36 +205,10 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 海面上的漂流瓶 */}
-            {!currentBottle ? (
-              <div className="bottle-card rounded-2xl p-6">
-                <div className="text-center mb-4">
-                  <h3 className="text-lg font-semibold text-ocean-800 mb-2">
-                    海面上的瓶子
-                  </h3>
-                  <p className="text-ocean-600 text-sm">点击瓶子可以打开查看</p>
-                </div>
-
-                <div className="flex justify-center space-x-4 py-4">
-                  {floatingBottles.slice(0, 3).map((bottle, index) => (
-                    <div
-                      key={bottle.id}
-                      style={{ animationDelay: `${index * 0.5}s` }}
-                    >
-                      <BottleCard
-                        bottle={bottle}
-                        isFloating={true}
-                        onOpen={() => setCurrentBottle(bottle)}
-                        showActions={false}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
+            {currentBottle && (
+              <div className="space-y-4 mt-10">
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-ocean-800 mb-2">
+                  <h3 className="text-lg font-semibold text-ocean-800 mb-20">
                     🎉 您发现了一个漂流瓶！
                   </h3>
                 </div>
@@ -222,6 +264,18 @@ export default function Home() {
         isOpen={showEditor}
         onClose={() => setShowEditor(false)}
         onSubmit={handleThrowBottle}
+      />
+
+      {/* 漂流瓶回复弹窗 */}
+      <BottleReplyModal
+        isOpen={showReplyModal}
+        bottle={replyBottle}
+        onClose={() => {
+          setShowReplyModal(false);
+          setReplyBottle(null);
+        }}
+        onReplySubmit={handleReplySubmit}
+        onStartChat={handleStartChat}
       />
     </div>
   );
