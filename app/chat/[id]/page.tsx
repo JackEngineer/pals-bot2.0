@@ -59,7 +59,7 @@ export default function ChatPage() {
   return (
     <div className="min-h-screen bg-ocean-light ocean-background">
       {/* 海洋波纹背景层 */}
-      <div className="absolute inset-0 bg-water-ripple opacity-30"></div>
+      {/* <div className="absolute inset-0 bg-water-ripple opacity-30"></div> */}
 
       <div className="relative z-10 h-screen flex flex-col">
         <AnimatePresence mode="wait">

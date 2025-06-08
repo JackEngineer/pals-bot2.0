@@ -20,16 +20,25 @@ export async function GET(request: NextRequest, { params }: Context) {
           success: false,
           error: "MISSING_USER_ID",
           message: "缺少用户ID",
+          timestamp: new Date().toISOString(),
         },
         { status: 400 }
       );
     }
 
-    // 验证用户是否有权限访问此会话
+    // 验证用户是否有权限访问此会话，同时获取会话状态信息
     const conversation = await prisma.conversation.findFirst({
       where: {
         id: conversationId,
         OR: [{ user1Id: userId }, { user2Id: userId }],
+      },
+      select: {
+        id: true,
+        user1Id: true,
+        user2Id: true,
+        lastMessageAt: true,
+        updatedAt: true,
+        isActive: true,
       },
     });
 
@@ -39,6 +48,7 @@ export async function GET(request: NextRequest, { params }: Context) {
           success: false,
           error: "CONVERSATION_NOT_FOUND",
           message: "会话不存在或无权限访问",
+          timestamp: new Date().toISOString(),
         },
         { status: 404 }
       );
@@ -93,6 +103,13 @@ export async function GET(request: NextRequest, { params }: Context) {
           hasMore: messages.length === limit,
         },
         currentUserId: userId,
+        // 会话状态信息（用于轮询检查）
+        conversationStatus: {
+          exists: true,
+          isActive: conversation.isActive,
+          lastMessageAt: conversation.lastMessageAt,
+          lastUpdatedAt: conversation.updatedAt,
+        },
       },
       timestamp: new Date().toISOString(),
     });
@@ -103,6 +120,7 @@ export async function GET(request: NextRequest, { params }: Context) {
         success: false,
         error: "INTERNAL_ERROR",
         message: "服务器内部错误",
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
@@ -123,14 +141,24 @@ export async function POST(request: NextRequest, { params }: Context) {
     // 验证消息内容
     if (!content?.trim()) {
       return NextResponse.json(
-        { success: false, error: "EMPTY_CONTENT", message: "消息内容不能为空" },
+        {
+          success: false,
+          error: "EMPTY_CONTENT",
+          message: "消息内容不能为空",
+          timestamp: new Date().toISOString(),
+        },
         { status: 400 }
       );
     }
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, error: "MISSING_USER_ID", message: "缺少用户ID" },
+        {
+          success: false,
+          error: "MISSING_USER_ID",
+          message: "缺少用户ID",
+          timestamp: new Date().toISOString(),
+        },
         { status: 400 }
       );
     }
@@ -141,6 +169,12 @@ export async function POST(request: NextRequest, { params }: Context) {
         id: conversationId,
         OR: [{ user1Id: userId }, { user2Id: userId }],
       },
+      select: {
+        id: true,
+        user1Id: true,
+        user2Id: true,
+        isActive: true,
+      },
     });
 
     if (!conversation) {
@@ -149,6 +183,7 @@ export async function POST(request: NextRequest, { params }: Context) {
           success: false,
           error: "CONVERSATION_NOT_FOUND",
           message: "会话不存在或无权限访问",
+          timestamp: new Date().toISOString(),
         },
         { status: 404 }
       );
@@ -206,6 +241,7 @@ export async function POST(request: NextRequest, { params }: Context) {
         success: false,
         error: "INTERNAL_ERROR",
         message: "服务器内部错误",
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );

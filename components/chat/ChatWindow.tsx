@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatActions } from "@/hooks/useChatActions";
+import { ConversationEndedModal } from "./ConversationEndedModal";
 
 interface User {
   id: string;
@@ -39,13 +40,25 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const [sending, setSending] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [conversationEnded, setConversationEnded] = useState(false);
+  const [showEndedMessage, setShowEndedMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { getMessages, sendMessage, loading } = useChatActions();
+  const { getMessages, sendMessage, deleteConversation, loading } =
+    useChatActions();
 
   useEffect(() => {
     fetchMessages();
+    startPolling();
+
+    // 清理轮询
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [conversation.id]);
 
   useEffect(() => {
@@ -58,6 +71,61 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       setMessages(result.messages);
       setCurrentUserId(result.currentUserId);
     }
+  };
+
+  // 检查会话是否存在
+  const checkConversationExists = async () => {
+    try {
+      const result = await getMessages(conversation.id, 1, 1);
+
+      if (!result) {
+        // 会话不存在，显示结束消息
+        handleConversationEnded();
+      }
+    } catch (error) {
+      console.error("检查会话状态失败:", error);
+      // 如果是404错误，说明会话已被删除
+      if (
+        error instanceof Error &&
+        error.message.includes("CONVERSATION_NOT_FOUND")
+      ) {
+        handleConversationEnded();
+      }
+    }
+  };
+
+  // 处理会话结束的显示逻辑
+  const handleConversationEnded = () => {
+    if (!conversationEnded) {
+      setConversationEnded(true);
+      setShowEndedMessage(true);
+
+      // 停止轮询
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+
+      // 3秒后自动跳转
+      setTimeout(() => {
+        onBack();
+      }, 3000);
+    }
+  };
+
+  // 启动轮询
+  const startPolling = () => {
+    // 清除之前的轮询
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    // 每5秒检查一次会话是否存在
+    pollingIntervalRef.current = setInterval(() => {
+      if (!conversationEnded) {
+        checkConversationExists();
+      }
+    }, 5000);
   };
 
   const handleSendMessage = async () => {
@@ -142,6 +210,31 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     return message.messageType === "SYSTEM";
   };
 
+  // 处理结束会话
+  const handleEndConversation = async () => {
+    const confirmed = confirm(
+      "确定要结束这个会话吗？所有消息记录将被删除，此操作无法撤销。"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const success = await deleteConversation(conversation.id);
+
+      if (success) {
+        // 显示成功提示
+        alert("会话已结束");
+        // 返回聊天列表
+        onBack();
+      } else {
+        alert("结束会话失败，请重试");
+      }
+    } catch (error) {
+      console.error("结束会话失败:", error);
+      alert("结束会话失败，请重试");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-blue-50 to-white">
       {/* 聊天头部 */}
@@ -174,21 +267,33 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
             />
           ) : (
             <span className="text-white font-medium">
-              {conversation.otherUser.firstName.charAt(0)}
+              {/* {conversation.otherUser.firstName.charAt(0)} */}匿
             </span>
           )}
         </div>
 
         <div>
-          <h3 className="font-medium text-gray-900">
-            {getUserDisplayName(conversation.otherUser)}
-          </h3>
+          <h3 className="font-medium text-gray-900">匿名用户</h3>
           <p className="text-xs text-gray-500">匿名聊天</p>
         </div>
+        {/*增加一个销毁按钮，点击后销毁会话 */}
+        <button
+          className="p-2 hover:bg-red-100 rounded-full transition-colors text-red-600 text-sm font-medium"
+          onClick={handleEndConversation}
+          disabled={loading}
+        >
+          {"结束会话"}
+        </button>
       </div>
 
       {/* 消息列表 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* 会话结束提示 */}
+        <ConversationEndedModal
+          isVisible={showEndedMessage}
+          onJumpToList={onBack}
+        />
+
         <AnimatePresence>
           {messages.map((message, index) => (
             <motion.div
@@ -272,12 +377,14 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="输入消息..."
+              placeholder={conversationEnded ? "会话已结束" : "输入消息..."}
               rows={1}
+              disabled={conversationEnded}
               className="
                 w-full resize-none rounded-full px-4 py-3 pr-12
                 input-ocean
                 max-h-32
+                disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed
               "
               style={{
                 minHeight: "44px",
@@ -288,11 +395,11 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
 
           <button
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || sending}
+            disabled={!inputValue.trim() || sending || conversationEnded}
             className={`
               p-3 rounded-full transition-all duration-200 flex items-center justify-center
               ${
-                inputValue.trim() && !sending
+                inputValue.trim() && !sending && !conversationEnded
                   ? "ocean-button"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }

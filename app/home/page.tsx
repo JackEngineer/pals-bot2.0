@@ -47,7 +47,7 @@ export default function Home() {
 
   const { throwBottle, pickBottle, loading, throwLoading, pickLoading } =
     useBottleActions();
-  const { createConversation, replyToBottle } = useChatActions();
+  const { replyToBottleAndChat } = useChatActions();
   const {
     stats,
     loading: statsLoading,
@@ -110,45 +110,54 @@ export default function Home() {
   };
 
   /**
-   * 处理回复提交
+   * 回复漂流瓶并开始聊天
    */
-  const handleReplySubmit = async (replyContent: string) => {
-    if (!replyBottle) return;
-
-    // 发送回复到服务器
-    const result = await replyToBottle(replyBottle.id, replyContent);
-    if (result) {
-      console.log("回复成功:", result);
-    }
-  };
-
-  /**
-   * 发起聊天
-   */
-  const handleStartChat = async (bottle: BottleData) => {
-    console.log("handleStartChat", bottle);
-
-    if (!bottle.userId) {
-      console.error("漂流瓶缺少用户信息");
+  const handleReplyAndChat = async (replyContent: string) => {
+    if (!replyBottle) {
+      console.error("没有选中的漂流瓶");
+      toast.error("系统错误，请重试");
       return;
     }
 
-    // 创建会话，并传递瓶子上下文
-    const conversation = await createConversation(bottle.userId, {
-      content: bottle.content,
-      author: bottle.author,
-      bottleId: bottle.id,
-      mediaType: bottle.mediaType,
-      mediaUrl: bottle.mediaUrl,
-    });
+    try {
+      console.log("开始回复漂流瓶:", replyBottle.id, replyContent);
 
-    if (conversation) {
-      // 关闭弹窗
-      setShowReplyModal(false);
-      setCurrentBottle(null);
+      // 调用新的API，一次性完成回复和创建聊天会话
+      const result = await replyToBottleAndChat(replyBottle.id, replyContent);
 
-      // 跳转到聊天页面
-      router.push(`/chat?conversation=${conversation.id}`);
+      if (result && result.conversation) {
+        // 先显示成功提示
+        toast.success("回复已发送，正在跳转聊天...");
+
+        // 关闭弹窗并清理状态
+        setShowReplyModal(false);
+        setCurrentBottle(null);
+        setReplyBottle(null);
+
+        // 延迟一小段时间后跳转，让用户看到成功提示
+        setTimeout(() => {
+          router.push(`/chat/${result.conversation.id}`);
+        }, 800);
+      } else {
+        // API调用成功但返回数据异常
+        console.error("API返回数据异常:", result);
+        toast.error("回复发送失败，请重试");
+      }
+    } catch (error) {
+      console.error("回复并创建聊天失败:", error);
+
+      // 根据错误类型提供更具体的错误信息
+      if (error instanceof Error) {
+        if (error.message.includes("网络")) {
+          toast.error("网络连接失败，请检查网络后重试");
+        } else if (error.message.includes("超时")) {
+          toast.error("请求超时，请重试");
+        } else {
+          toast.error("发送失败，请重试");
+        }
+      } else {
+        toast.error("发送失败，请重试");
+      }
     }
   };
 
@@ -289,8 +298,7 @@ export default function Home() {
           // 清空当前漂流瓶
           setCurrentBottle(null);
         }}
-        onReplySubmit={handleReplySubmit}
-        onStartChat={handleStartChat}
+        onReplyAndChat={handleReplyAndChat}
       />
     </div>
   );

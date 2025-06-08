@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+* 禁用用户选择
+* 禁用长按
+* 禁用双指缩放
+* 禁用双指旋转
+* 禁用双指拖拽
+* 禁用双指捏合
+* 禁用双指旋转
+* 禁用双指拖拽
+*/
+
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -webkit-user-select: none;
+}
+
 :root {
   /* 海洋主题颜色变量 */
   --ocean-primary: 14, 165, 233; /* ocean-500 */

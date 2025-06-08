@@ -30,39 +30,40 @@ interface BottleReplyModalProps {
   isOpen: boolean;
   bottle: BottleData | null;
   onClose: () => void;
-  onReplySubmit: (replyContent: string) => void;
-  onStartChat: (bottle: BottleData) => void;
+  onReplyAndChat: (replyContent: string) => Promise<void>;
 }
 
 export function BottleReplyModal({
   isOpen,
   bottle,
   onClose,
-  onReplySubmit,
-  onStartChat,
+  onReplyAndChat,
 }: BottleReplyModalProps) {
   const [replyContent, setReplyContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showReplySuccess, setShowReplySuccess] = useState(false);
 
-  const handleSubmitReply = async () => {
+  const handleReplyAndChat = async () => {
+    if (!replyContent.trim() || !bottle || isLoading) return;
+
     setIsLoading(true);
-    if (!replyContent.trim() || !bottle) return;
-
-    await onReplySubmit(replyContent.trim());
-    setShowReplySuccess(true);
-    setIsLoading(false);
-  };
-
-  const handleStartChat = () => {
-    if (bottle) {
-      onStartChat(bottle);
+    try {
+      await onReplyAndChat(replyContent.trim());
+      // 成功后父组件会处理弹窗关闭和跳转，这里不需要重置loading状态
+      // 因为组件即将被卸载
+    } catch (error) {
+      console.error("回复并开始聊天失败:", error);
+      // 只有在失败的情况下才重置loading状态，让用户可以重试
+      setIsLoading(false);
     }
+    // 注意：移除了finally块，因为成功时组件会被卸载，不需要重置状态
   };
 
   const handleClose = () => {
+    // 只有在非加载状态下才允许关闭
+    if (isLoading) return;
+
     setReplyContent("");
-    setShowReplySuccess(false);
+    setIsLoading(false);
     onClose();
   };
 
@@ -109,10 +110,15 @@ export function BottleReplyModal({
                 </h3>
                 <button
                   onClick={handleClose}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className={`p-2 rounded-full transition-colors ${
+                    isLoading
+                      ? "cursor-not-allowed text-gray-300"
+                      : "hover:bg-gray-100 text-gray-500"
+                  }`}
+                  disabled={isLoading}
                 >
                   <svg
-                    className="w-5 h-5 text-gray-500"
+                    className="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -134,8 +140,7 @@ export function BottleReplyModal({
                     🍾 原始消息
                   </span>
                   <span className="text-blue-500 text-xs">
-                    {"匿名"} •{" "}
-                    {getTimeAgo(bottle.createdAt)}
+                    {"匿名"} • {getTimeAgo(bottle.createdAt)}
                   </span>
                 </div>
                 <p className="text-gray-800 leading-relaxed">
@@ -163,84 +168,57 @@ export function BottleReplyModal({
                 )}
               </div>
 
-              {!showReplySuccess ? (
-                <div className="space-y-4">
-                  {/* 回复输入区域 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      您的回复
-                    </label>
-                    <textarea
-                      value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
-                      placeholder="写下您对这个漂流瓶的回复..."
-                      rows={4}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-                      maxLength={100}
-                    />
-                    <div className="text-right text-xs text-gray-500 mt-1">
-                      {replyContent.length}/100
-                    </div>
+              {/* 回复输入区域 */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    您的回复
+                  </label>
+                  <textarea
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    placeholder="写下您对这个漂流瓶的回复..."
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    maxLength={500}
+                    disabled={isLoading}
+                  />
+                  <div className="text-right text-xs text-gray-500 mt-1">
+                    {replyContent.length}/500
                   </div>
+                </div>
 
-                  {/* 操作按钮 */}
-                  <div className="grid gap-3">
-                    <button
-                      onClick={handleSubmitReply}
-                      disabled={!replyContent.trim() || isLoading}
-                      className={`bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2 ${isLoading ? 'animate-pulse' : ''}`}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Icon icon={Loader2} className="w-4 h-4 animate-spin" />
-                          <span>发送中...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>💬</span>
-                          <span>发送回复</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+                {/* 操作按钮 */}
+                <div className="space-y-3">
+                  <button
+                    onClick={handleReplyAndChat}
+                    disabled={!replyContent.trim() || isLoading}
+                    className={`w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                      isLoading
+                        ? "animate-pulse"
+                        : "hover:scale-[1.02] active:scale-[0.98]"
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Icon icon={Loader2} className="w-4 h-4 animate-spin" />
+                        <span>正在发送回复...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>💬</span>
+                        <span>回复并开始聊天</span>
+                      </>
+                    )}
+                  </button>
 
                   <div className="text-center">
                     <p className="text-xs text-gray-500">
-                      💡 发起聊天可以与瓶子主人进行实时对话
+                      💡 回复后将自动创建聊天会话，开始与瓶子主人对话
                     </p>
                   </div>
                 </div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-8"
-                >
-                  <div className="text-4xl mb-4">✅</div>
-                  <h4 className="text-lg font-semibold text-green-700 mb-2">
-                    回复发送成功！
-                  </h4>
-                  <p className="text-green-600 text-sm mb-6">
-                    您的回复已经送达，瓶子主人会收到通知
-                  </p>
-
-                  <div className="flex justify-center gap-3">
-                    <button
-                      onClick={handleStartChat}
-                      className="bg-green-600 hover:bg-green-700 text-white py-3 px-10 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-                    >
-                      <span>💬</span>
-                      去聊天
-                    </button>
-                    <button
-                      onClick={handleClose}
-                      className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-8 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-                    >
-                      关闭
-                    </button>
-                  </div>
-                </motion.div>
-              )}
+              </div>
             </div>
           </motion.div>
         </>

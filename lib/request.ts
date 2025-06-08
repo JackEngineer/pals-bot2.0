@@ -20,14 +20,14 @@ export async function request<T>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
-//   const initData = getTelegramInitData();
+  //   const initData = getTelegramInitData();
   const headers: HeadersInit = {
     ...(options.headers || {}),
     "Content-Type": "application/json",
   };
-//   if (initData) {
-//     headers["Authorization"] = `Bearer ${initData}`;
-//   }
+  //   if (initData) {
+  //     headers["Authorization"] = `Bearer ${initData}`;
+  //   }
 
   const res = await fetch(url, {
     ...options,
@@ -67,4 +67,9 @@ export function post<T>(url: string, body?: any, options?: RequestInit) {
   });
 }
 
-// 其他方法（PUT、DELETE）可按需扩展
+/**
+ * 便捷 DELETE 请求
+ */
+export function del<T>(url: string, options?: RequestInit) {
+  return request<T>(url, { ...options, method: "DELETE" });
+}
