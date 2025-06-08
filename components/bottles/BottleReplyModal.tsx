@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import Icon from "@/components/ui/Icon";
 
 interface BottleData {
   id: string;
@@ -40,18 +42,16 @@ export function BottleReplyModal({
   onStartChat,
 }: BottleReplyModalProps) {
   const [replyContent, setReplyContent] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [showReplySuccess, setShowReplySuccess] = useState(false);
 
   const handleSubmitReply = async () => {
+    setIsLoading(true);
     if (!replyContent.trim() || !bottle) return;
 
     await onReplySubmit(replyContent.trim());
     setShowReplySuccess(true);
-
-    // 2秒后隐藏成功提示
-    setTimeout(() => {
-      setShowReplySuccess(false);
-    }, 2000);
+    setIsLoading(false);
   };
 
   const handleStartChat = () => {
@@ -99,7 +99,7 @@ export function BottleReplyModal({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed inset-x-4 top-20 -translate-y-1/2 z-50 max-w-lg mx-auto"
+            className="fixed inset-x-2 z-50 max-w-lg mx-auto pt-10"
           >
             <div className="bottle-card rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
               {/* 头部 */}
@@ -134,7 +134,7 @@ export function BottleReplyModal({
                     🍾 原始消息
                   </span>
                   <span className="text-blue-500 text-xs">
-                    {bottle.author?.firstName || "匿名"} •{" "}
+                    {"匿名"} •{" "}
                     {getTimeAgo(bottle.createdAt)}
                   </span>
                 </div>
@@ -176,30 +176,31 @@ export function BottleReplyModal({
                       placeholder="写下您对这个漂流瓶的回复..."
                       rows={4}
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-                      maxLength={500}
+                      maxLength={100}
                     />
                     <div className="text-right text-xs text-gray-500 mt-1">
-                      {replyContent.length}/500
+                      {replyContent.length}/100
                     </div>
                   </div>
 
                   {/* 操作按钮 */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3">
                     <button
                       onClick={handleSubmitReply}
-                      disabled={!replyContent.trim()}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+                      disabled={!replyContent.trim() || isLoading}
+                      className={`bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2 ${isLoading ? 'animate-pulse' : ''}`}
                     >
-                      <span>💬</span>
-                      发送回复
-                    </button>
-
-                    <button
-                      onClick={handleStartChat}
-                      className="bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-                    >
-                      <span>💭</span>
-                      发起聊天
+                      {isLoading ? (
+                        <>
+                          <Icon icon={Loader2} className="w-4 h-4 animate-spin" />
+                          <span>发送中...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>💬</span>
+                          <span>发送回复</span>
+                        </>
+                      )}
                     </button>
                   </div>
 
@@ -223,20 +224,19 @@ export function BottleReplyModal({
                     您的回复已经送达，瓶子主人会收到通知
                   </p>
 
-                  <div className="space-y-3">
+                  <div className="flex justify-center gap-3">
                     <button
                       onClick={handleStartChat}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
+                      className="bg-green-600 hover:bg-green-700 text-white py-3 px-10 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
                     >
-                      <span>💭</span>
-                      继续发起聊天
+                      <span>💬</span>
+                      去聊天
                     </button>
-
                     <button
                       onClick={handleClose}
-                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-xl font-medium transition-colors duration-200"
+                      className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-8 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2"
                     >
-                      返回主页
+                      关闭
                     </button>
                   </div>
                 </motion.div>

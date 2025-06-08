@@ -97,11 +97,11 @@ export default function BottleEditor({
         {/* 头部 */}
         <div className="bg-ocean-gradient text-white p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl">💌</span>
+            {/* <span className="text-xl">🍾</span> */}
             <h2 className="text-lg font-semibold">
-              {currentStep === "content" && "写下心声"}
+              {currentStep === "content" && "写下漂流瓶内容"}
               {currentStep === "style" && "装扮瓶子"}
-              {currentStep === "preview" && "预览投递"}
+              {currentStep === "preview" && "预览瓶子"}
             </h2>
           </div>
           <button
@@ -152,19 +152,19 @@ export default function BottleEditor({
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="在这里写下你的心声，让它随着漂流瓶飘向远方..."
+                  placeholder="在这里写下你的漂流瓶内容，让它随着漂流瓶飘向远方..."
                   className="w-full h-32 p-3 border border-ocean-200 rounded-lg resize-none
                     focus:border-ocean-500 focus:ring-2 focus:ring-ocean-200 transition-colors
                     placeholder-ocean-400"
-                  maxLength={500}
+                  maxLength={100}
                 />
                 <div className="text-right text-xs text-ocean-500 mt-1">
-                  {content.length}/500
+                  {content.length}/100
                 </div>
               </div>
 
               {/* 媒体类型选择 */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-ocean-700 mb-2">
                   内容类型
                 </label>
@@ -187,7 +187,7 @@ export default function BottleEditor({
                     </button>
                   ))}
                 </div>
-              </div>
+              </div> */}
             </div>
           )}
 

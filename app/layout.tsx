@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import BottomNav from "@/components/navigation/BottomNav";
 import TopNav from "@/components/navigation/TopNav";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Pals Bot 2.0 - 漂流瓶",
@@ -24,6 +25,7 @@ export default function RootLayout({
           <div className="pals-container">{children}</div>
           <BottomNav />
         </div>
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );

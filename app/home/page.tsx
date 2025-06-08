@@ -9,6 +9,7 @@ import { useChatActions } from "@/hooks/useChatActions";
 import { useStats } from "@/hooks/useStats";
 import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import "./page.css";
 
 // 模拟数据接口
@@ -43,7 +44,7 @@ export default function Home() {
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [replyBottle, setReplyBottle] = useState<BottleData | null>(null);
 
-  const { throwBottle, pickBottle, loading } = useBottleActions();
+  const { throwBottle, pickBottle, loading, throwLoading, pickLoading } = useBottleActions();
   const { createConversation, replyToBottle } = useChatActions();
   const {
     stats,
@@ -69,7 +70,7 @@ export default function Home() {
    * 捞瓶子
    */
   const handlePickBottle = async () => {
-    if (loading) return;
+    if (pickLoading) return;
     const bottle = await pickBottle();
     if (bottle) {
       setCurrentBottle(bottle);
@@ -92,6 +93,8 @@ export default function Home() {
     console.log("投递漂流瓶:", { content, mediaType, mediaUrl, bottleStyle });
     await throwBottle(content, mediaType, mediaUrl, bottleStyle);
     setShowEditor(false);
+    // 成功提示
+    toast.success("你的瓶子已飘向远方，等待被发现");
   };
 
   /**
@@ -121,6 +124,8 @@ export default function Home() {
    * 发起聊天
    */
   const handleStartChat = async (bottle: BottleData) => {
+    console.log("handleStartChat", bottle);
+
     if (!bottle.userId) {
       console.error("漂流瓶缺少用户信息");
       return;
@@ -236,18 +241,18 @@ export default function Home() {
 
             <button
               onClick={handlePickBottle}
-              disabled={loading}
+              disabled={pickLoading}
               className="bg-aqua-500 hover:bg-aqua-600 text-white py-4 px-6 rounded-2xl
                 text-center transition-all duration-200 hover:scale-105 hover:shadow-lg
                 hover:shadow-aqua-500/25 active:scale-95 disabled:opacity-50
                 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <div className="text-2xl mb-2">{loading ? "🌊" : "🎣"}</div>
+              <div className="text-2xl mb-2">{pickLoading ? "🌊" : "🎣"}</div>
               <div className="font-semibold text-sm">
-                {loading ? "捞取中..." : "捞瓶子"}
+                {pickLoading ? "捞取中..." : "捞瓶子"}
               </div>
               <div className="text-xs opacity-80 mt-1">
-                {loading ? "请稍候" : "发现惊喜"}
+                {pickLoading ? "请稍候" : "发现惊喜"}
               </div>
             </button>
           </div>

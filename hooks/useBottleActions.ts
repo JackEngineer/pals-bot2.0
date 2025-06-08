@@ -27,6 +27,9 @@ interface BottleData {
 
 export function useBottleActions() {
   const [loading, setLoading] = useState(false);
+  const [pickLoading, setPickLoading] = useState(false);
+  const [throwLoading, setThrowLoading] = useState(false);
+  const [replyLoading, setReplyLoading] = useState(false);
 
   const { isAuthenticated, isLoading: isTelegramLoading } = useTelegramAuth();
   const user = useUserStore((state) => state.user);
@@ -39,7 +42,7 @@ export function useBottleActions() {
     mediaUrl: string,
     bottleStyle: any
   ) => {
-    setLoading(true);
+    setThrowLoading(true);
     if (!isAuthenticated || !user) return;
     try {
       const payload = {
@@ -52,15 +55,15 @@ export function useBottleActions() {
       const data = await post(`/api/bottles`, payload);
       return data;
     } finally {
-      setLoading(false);
+      setThrowLoading(false);
     }
   };
 
   // 捞瓶子
   const pickBottle = async (): Promise<BottleData | null> => {
-    setLoading(true);
+    setPickLoading(true);
     if (!isAuthenticated || !user) {
-      setLoading(false);
+      setPickLoading(false);
       router.push("/");
       return null;
     }
@@ -81,9 +84,9 @@ export function useBottleActions() {
       }
       return null;
     } finally {
-      setLoading(false); // 无论成功与否，都设置为 false
+      setPickLoading(false); // 无论成功与否，都设置为 false
     }
   };
 
-  return { throwBottle, pickBottle, loading };
+  return { throwBottle, pickBottle, loading, throwLoading, replyLoading, pickLoading };
 }
