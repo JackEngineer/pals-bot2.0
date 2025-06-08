@@ -6,6 +6,7 @@ import { ConversationList } from "@/components/chat/ConversationList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatActions } from "@/hooks/useChatActions";
+import "./page.css";
 
 interface User {
   id: string;
@@ -67,7 +68,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-ocean-light ocean-background">
+    <div className="chat bg-ocean-light ocean-background pt-20">
       {/* 海洋波纹背景层 */}
       {/* <div className="absolute inset-0 bg-water-ripple opacity-30"></div> */}
 

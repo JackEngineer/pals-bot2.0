@@ -57,11 +57,10 @@ export default function BottomNav() {
   };
   console.log("pathname", pathname);
   // 如果地址栏没有 pathname 则认为未登录
-  const isLogin = pathname !== "/"
-  const isHide = !["/home", "/chat", "/voices", "/profile"].includes(pathname)
+  const isLogin = pathname !== "/";
+  const isHide = !["/home", "/chat", "/voices", "/profile"].includes(pathname);
 
-  return (
-    isLogin && !isHide ? (
+  return isLogin && !isHide ? (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-ocean-200 px-4 py-2">
       <div className="flex justify-around items-center max-w-lg mx-auto">
         {navItems.map((item) => {
@@ -95,6 +94,7 @@ export default function BottomNav() {
         })}
       </div>
     </div>
-    ) : (<></>)
+  ) : (
+    <></>
   );
 }

@@ -258,6 +258,63 @@ export const statisticsOperations = {
       totalReplies,
     };
   },
+
+  // 获取今日统计
+  async getDailyStats(date?: Date) {
+    const targetDate = date || new Date();
+    const startOfDay = new Date(
+      targetDate.getFullYear(),
+      targetDate.getMonth(),
+      targetDate.getDate()
+    );
+    const endOfDay = new Date(
+      targetDate.getFullYear(),
+      targetDate.getMonth(),
+      targetDate.getDate() + 1
+    );
+
+    const [newBottlesCount, discoveredBottlesCount, newRepliesCount] =
+      await Promise.all([
+        // 今日新投递的漂流瓶数量
+        prisma.bottle.count({
+          where: {
+            createdAt: {
+              gte: startOfDay,
+              lt: endOfDay,
+            },
+            isActive: true,
+          },
+        }),
+
+        // 今日被捞起的漂流瓶数量
+        prisma.discovery.count({
+          where: {
+            discoveredAt: {
+              gte: startOfDay,
+              lt: endOfDay,
+            },
+          },
+        }),
+
+        // 今日新回复数量
+        prisma.reply.count({
+          where: {
+            createdAt: {
+              gte: startOfDay,
+              lt: endOfDay,
+            },
+            isActive: true,
+          },
+        }),
+      ]);
+
+    return {
+      newBottles: newBottlesCount,
+      discoveredBottles: discoveredBottlesCount,
+      newReplies: newRepliesCount,
+      date: startOfDay.toISOString().split("T")[0], // YYYY-MM-DD 格式
+    };
+  },
 };
 
 export default prisma;

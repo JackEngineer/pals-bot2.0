@@ -147,19 +147,7 @@ export function ConversationList({
   }
 
   return (
-    <div className="space-y-2 p-4">
-      {/* 开始随机聊天按钮 */}
-      {/* <div className="mb-4">
-        <button
-          onClick={handleStartRandomChat}
-          disabled={loading}
-          className="w-full ocean-button py-3 rounded-xl text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <span className="text-lg">🎲</span>
-          {loading ? "匹配中..." : "开始随机聊天"}
-        </button>
-      </div> */}
-
+    <div className="space-y-2">
       {conversations.map((conversation, index) => (
         <motion.div
           key={conversation.id}
@@ -188,7 +176,9 @@ export function ConversationList({
                   />
                 ) : (
                   <span className="text-white font-medium text-lg">
-                    {conversation.otherUser.firstName.charAt(0)}
+                    匿
+                    {/* {conversation.otherUser.firstName.charAt(0)} */}
+                    {/* <img src="/images/default-avatar.png" alt="默认头像" className="w-full h-full object-cover" /> */}
                   </span>
                 )}
               </div>
@@ -204,7 +194,7 @@ export function ConversationList({
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <h4 className="font-medium text-gray-900 truncate">
-                  {getUserDisplayName(conversation.otherUser)}
+                  匿名用户
                 </h4>
                 <span className="text-xs text-gray-500 shrink-0">
                   {formatTime(

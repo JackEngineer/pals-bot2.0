@@ -7,6 +7,7 @@ import { BottleReplyModal } from "@/components/bottles/BottleReplyModal";
 import { useBottleActions } from "@/hooks/useBottleActions";
 import { useChatActions } from "@/hooks/useChatActions";
 import { useUserStore } from "@/hooks/useUserStore";
+import { useStats } from "@/hooks/useStats";
 import { useRouter } from "next/navigation";
 import "./page.css";
 
@@ -45,6 +46,12 @@ export default function Home() {
   const { throwBottle, pickBottle, loading } = useBottleActions();
   const { createConversation, replyToBottle } = useChatActions();
   const { user, setUser } = useUserStore();
+  const {
+    stats,
+    loading: statsLoading,
+    error: statsError,
+    refresh: refreshStats,
+  } = useStats();
   const router = useRouter();
   // 模拟漂流瓶数据
   const mockBottles: BottleData[] = [
@@ -171,7 +178,7 @@ export default function Home() {
   };
 
   return (
-    <div className="home bg-ocean-light ocean-background">
+    <div className="home bg-ocean-light ocean-background pt-20">
       {/* 海洋波纹背景层 */}
       {/* <div className="absolute inset-0 bg-water-ripple opacity-30"></div> */}
 
@@ -182,23 +189,43 @@ export default function Home() {
             {/* 今日统计 */}
             <div className="bottle-card rounded-2xl p-4">
               <div className="text-center">
-                <h4 className="text-sm font-medium text-ocean-700 mb-3">
-                  今日海边
-                </h4>
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <h4 className="text-sm font-medium text-ocean-700">
+                    今日海边
+                  </h4>
+                  {statsLoading && (
+                    <div className="animate-spin w-3 h-3 border border-ocean-300 border-t-ocean-600 rounded-full"></div>
+                  )}
+                  {statsError && (
+                    <button
+                      onClick={refreshStats}
+                      className="text-xs text-red-500 hover:text-red-600"
+                      title="点击重新加载"
+                    >
+                      ⚠️
+                    </button>
+                  )}
+                </div>
                 <div className="grid grid-cols-3 gap-4 text-xs">
                   <div className="text-center">
                     <div className="text-lg text-ocean-600 mb-1">🌊</div>
-                    <div className="font-semibold text-ocean-800">328</div>
+                    <div className="font-semibold text-ocean-800">
+                      {statsLoading ? "--" : stats?.newBottles ?? 0}
+                    </div>
                     <div className="text-ocean-600">新瓶子</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg text-ocean-600 mb-1">🎣</div>
-                    <div className="font-semibold text-ocean-800">156</div>
+                    <div className="font-semibold text-ocean-800">
+                      {statsLoading ? "--" : stats?.discoveredBottles ?? 0}
+                    </div>
                     <div className="text-ocean-600">被捞起</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg text-ocean-600 mb-1">💬</div>
-                    <div className="font-semibold text-ocean-800">89</div>
+                    <div className="font-semibold text-ocean-800">
+                      {statsLoading ? "--" : stats?.newReplies ?? 0}
+                    </div>
                     <div className="text-ocean-600">新回复</div>
                   </div>
                 </div>
