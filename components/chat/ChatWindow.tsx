@@ -58,7 +58,7 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  const abortControllerRef = useRef<AbortController | null>(null);
   const {
     getMessages,
     getNewMessages,
@@ -67,12 +67,26 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     loading,
   } = useChatActions();
 
+  // 在 useEffect 清理中
   useEffect(() => {
-    fetchMessages();
-    startPolling();
-
-    // 清理轮询
     return () => {
+      // 清理进行中的请求
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchInitialMessages();
+
+    // 延迟启动轮询，避免立即冲突
+    const timer = setTimeout(() => {
+      startPolling();
+    }, 10000);
+
+    return () => {
+      clearTimeout(timer);
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
@@ -83,12 +97,19 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     scrollToBottom();
   }, [messages]);
 
-  const fetchMessages = async () => {
+  // useEffect(() => {
+  //   console.log("messages 状态发生变化，当前消息数量:", messages.length);
+  //   console.log(
+  //     "所有消息ID:",
+  //     messages.map((m) => ({ id: m.id, content: m.content.substring(0, 10) }))
+  //   );
+  // }, [messages]);
+
+  const fetchInitialMessages = async () => {
     const result = await getMessages(conversation.id);
     if (result) {
       setMessages(result.messages);
       setCurrentUserId(result.currentUserId);
-      // 记录最后消息时间，用于增量查询
       if (result.messages.length > 0) {
         const latestMessage = result.messages[result.messages.length - 1];
         setLastMessageTime(latestMessage.createdAt);
@@ -96,36 +117,20 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
     }
   };
 
-  // 获取新消息并追加到现有消息中
   const fetchNewMessages = async () => {
-    try {
-      // 如果没有最后消息时间，使用常规查询
-      if (!lastMessageTime) {
-        const result = await getMessages(conversation.id, 1, 20);
-        if (!result) {
-          handleConversationEnded();
-          return;
-        }
-        // 检查是否有新消息需要追加
-        if (result.messages.length > 0) {
-          setMessages(result.messages);
-          setCurrentUserId(result.currentUserId);
-          const latestMessage = result.messages[result.messages.length - 1];
-          setLastMessageTime(latestMessage.createdAt);
-        }
-        return;
-      }
+    if (!lastMessageTime) {
+      console.warn("lastMessageTime 为空，跳过增量查询");
+      return;
+    }
 
-      // 使用增量查询获取新消息
+    try {
       const result = await getNewMessages(conversation.id, lastMessageTime);
 
       if (!result) {
-        // 会话不存在，显示结束消息
         handleConversationEnded();
         return;
       }
 
-      // 如果有新消息，追加到现有消息列表
       if (result.messages.length > 0) {
         setMessages((prev) => {
           // 避免重复消息
@@ -133,16 +138,20 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
           const newMessages = result.messages.filter(
             (msg) => !existingIds.has(msg.id)
           );
+
+          if (newMessages.length === 0) {
+            return prev;
+          }
+
           return [...prev, ...newMessages];
         });
 
-        // 更新最后消息时间
+        // 更新时间戳
         const latestMessage = result.messages[result.messages.length - 1];
         setLastMessageTime(latestMessage.createdAt);
       }
     } catch (error) {
       console.error("获取新消息失败:", error);
-      // 如果是404错误，说明会话已被删除
       if (
         error instanceof Error &&
         error.message.includes("CONVERSATION_NOT_FOUND")
@@ -189,7 +198,10 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   const handleSendMessage = async () => {
     if (!inputValue.trim() || sending) return;
 
-    const tempId = `temp-${Date.now()}`;
+    const tempId = `temp-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2)}`;
+    const messageContent = inputValue.trim();
 
     try {
       setSending(true);
@@ -197,7 +209,7 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       // 立即添加到本地状态以提供即时反馈
       const tempMessage: Message = {
         id: tempId,
-        content: inputValue.trim(),
+        content: messageContent,
         mediaType: "TEXT",
         createdAt: new Date().toISOString(),
         isRead: false,
@@ -211,19 +223,32 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
         },
       };
 
-      setMessages((prev) => [...prev, tempMessage]);
-      const messageContent = inputValue.trim();
+      setMessages((prev) => {
+        const newMessages = [...prev, tempMessage];
+        return newMessages;
+      });
       setInputValue("");
 
       const result = await sendMessage(conversation.id, messageContent);
 
       if (result) {
         // 替换临时消息为真实消息
-        setMessages((prev) =>
-          prev.map((msg) => (msg.id === tempId ? result : msg))
-        );
-        // 更新最后消息时间
-        setLastMessageTime(result.createdAt);
+        setMessages((prev) => {
+
+          const updatedMessages = prev.map((msg) => {
+            if (msg.id === tempId) {
+              return result;
+            }
+            return msg;
+          });
+
+          return updatedMessages;
+        });
+
+        // 更新最后消息时间 - 延迟更新避免轮询冲突
+        setTimeout(() => {
+          setLastMessageTime(result.createdAt);
+        }, 500);
       } else {
         // 发送失败，移除临时消息并恢复输入内容
         setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
@@ -233,6 +258,7 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
       console.error("发送消息失败:", error);
       // 移除临时消息
       setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
+      setInputValue(messageContent);
     } finally {
       setSending(false);
     }
@@ -324,13 +350,11 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
             {conversation.otherUser.avatarUrl ? (
               <img
                 src={conversation.otherUser.avatarUrl}
-                alt={getUserDisplayName(conversation.otherUser)}
+                alt="匿名用户头像"
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-white font-medium">
-                {/* {conversation.otherUser.firstName.charAt(0)} */}匿
-              </span>
+              <span className="text-white font-medium">匿</span>
             )}
           </div>
 
@@ -360,10 +384,7 @@ export function ChatWindow({ conversation, onBack }: ChatWindowProps) {
         <AnimatePresence>
           {messages.map((message, index) => (
             <motion.div
-              key={message.id + index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              key={index}
               className={`flex ${
                 isSystemMessage(message)
                   ? "justify-center"
