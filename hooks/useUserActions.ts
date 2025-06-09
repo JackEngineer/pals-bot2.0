@@ -53,7 +53,7 @@ export function useUserActions() {
         });
 
         if (newUser) {
-          toast.success(`✅ 新用户创建成功: ${newUser.firstName}`);
+          toast.success(`✅ 新用户创建成功`);
         } else {
           toast.error("❌ 新用户创建失败");
         }
@@ -62,7 +62,7 @@ export function useUserActions() {
       }
 
       console.log("✅ 找到现有用户:", data);
-      toast.success(`✅ 找到用户: ${data.firstName}`);
+      toast.success(`✅ 找到用户`);
       return data;
     } catch (error) {
       console.error("💥 checkUser 出错:", {
@@ -85,7 +85,7 @@ export function useUserActions() {
         });
 
         if (newUser) {
-          toast.success(`✅ 备用创建成功: ${newUser.firstName}`);
+          toast.success(`✅ 备用创建成功`);
         } else {
           toast.error("❌ 备用创建也失败");
         }
