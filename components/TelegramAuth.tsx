@@ -143,14 +143,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
       console.log("📋 checkUser 完成:", {
         duration: `${duration}ms`,
         success: !!userInfo,
-        userInfo: userInfo
-          ? {
-              id: userInfo.id,
-              telegramId: userInfo.telegramId,
-              firstName: userInfo.firstName,
-              username: userInfo.username,
-            }
-          : null,
+        userInfo,
       });
 
       if (!userInfo) {
@@ -159,7 +152,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
         return;
       }
 
-      toast.success(`✅ 用户检查成功: ${userInfo.firstName}`);
+      toast.success(`✅ 用户检查成功`);
       console.log("💾 设置用户信息到状态管理...");
       setUser(userInfo as UserInfo);
 
