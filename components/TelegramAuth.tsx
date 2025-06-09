@@ -6,6 +6,7 @@ import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useUserActions } from "@/hooks/useUserActions";
 import { useUserStore } from "@/hooks/useUserStore";
 import { UserInfo } from "@/hooks/useUserStore";
+import { toast } from "sonner";
 
 interface TelegramAuthProps {
   onAuthSuccess?: () => void;
@@ -35,6 +36,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
   const handleLogin = async () => {
     if (loading) return;
     const userInfo = await checkUser(user!);
+    toast.success(JSON.stringify(userInfo));
     if (!userInfo) return;
     setUser(userInfo as UserInfo);
     router.push("/home");
