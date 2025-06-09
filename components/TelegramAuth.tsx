@@ -34,9 +34,11 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
   }, [isAuthenticated, onAuthSuccess]);
 
   const handleLogin = async () => {
+    toast.success(`1${JSON.stringify(user)}`);
     if (loading) return;
+    toast.success(`2${JSON.stringify(user)}`);
     const userInfo = await checkUser(user!);
-    toast.success(JSON.stringify(userInfo));
+    toast.success(`3${JSON.stringify(userInfo)}`);
     if (!userInfo) return;
     setUser(userInfo as UserInfo);
     router.push("/home");
