@@ -8,7 +8,7 @@ import { BottleLoadingAnimation } from "@/components/bottles/BottleLoadingAnimat
 import { useBottleActions } from "@/hooks/useBottleActions";
 import { useChatActions } from "@/hooks/useChatActions";
 import { useStats } from "@/hooks/useStats";
-import { useAuthRedirect } from "@/hooks/useAuthRedirect";
+// import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import "./page.css";
@@ -37,7 +37,7 @@ interface BottleData {
 
 export default function Home() {
   // 🔐 认证检查 - 如果用户未登录，自动重定向到登录页
-  const { isAuthenticated } = useAuthRedirect();
+  // const { isAuthenticated } = useAuthRedirect();
 
   const [showEditor, setShowEditor] = useState(false);
   const [currentBottle, setCurrentBottle] = useState<BottleData | null>(null);
@@ -57,16 +57,16 @@ export default function Home() {
   const router = useRouter();
 
   // 如果用户未登录，显示加载状态（实际会自动重定向）
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-ocean-light flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-4 animate-bounce">🌊</div>
-          <p className="text-ocean-600">正在跳转到登录页面...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (!isAuthenticated) {
+  //   return (
+  //     <div className="min-h-screen bg-ocean-light flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="text-4xl mb-4 animate-bounce">🌊</div>
+  //         <p className="text-ocean-600">正在跳转到登录页面...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   /**
    * 捞瓶子
