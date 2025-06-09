@@ -49,9 +49,19 @@ export function useTelegramAuth() {
    * 执行身份验证
    */
   const authenticate = useCallback(async (initData: string) => {
+    console.log("=== 🔐 开始身份验证 ===");
+    console.log("📝 InitData 信息:", {
+      length: initData.length,
+      preview: initData.substring(0, 50) + "...",
+      timestamp: new Date().toISOString(),
+    });
+
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      console.log("🌐 发送认证请求到 /api/auth/telegram");
+      const requestStartTime = Date.now();
+
       const response = await fetch("/api/auth/telegram", {
         method: "POST",
         headers: {
@@ -60,9 +70,31 @@ export function useTelegramAuth() {
         body: JSON.stringify({ initData }),
       });
 
+      const requestDuration = Date.now() - requestStartTime;
+      console.log("📡 认证请求完成:", {
+        status: response.status,
+        statusText: response.statusText,
+        duration: `${requestDuration}ms`,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
+
       const data = await response.json();
+      console.log("📋 认证响应数据:", {
+        success: data.success,
+        hasUser: !!data.user,
+        error: data.error,
+        message: data.message,
+        user: data.user
+          ? {
+              id: data.user.id,
+              first_name: data.user.first_name,
+              username: data.user.username,
+            }
+          : null,
+      });
 
       if (response.ok && data.success) {
+        console.log("✅ 身份验证成功");
         setAuthState({
           isLoading: false,
           isAuthenticated: true,
@@ -72,6 +104,12 @@ export function useTelegramAuth() {
         return { success: true, user: data.user };
       } else {
         const errorMsg = data.error || "身份验证失败";
+        console.error("❌ 身份验证失败:", {
+          error: errorMsg,
+          status: response.status,
+          fullResponse: data,
+        });
+
         setAuthState({
           isLoading: false,
           isAuthenticated: false,
@@ -81,6 +119,12 @@ export function useTelegramAuth() {
         return { success: false, error: errorMsg };
       }
     } catch (error) {
+      console.error("💥 认证请求异常:", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+      });
+
       const errorMsg = "网络请求失败，请检查网络连接";
       setAuthState({
         isLoading: false,
@@ -96,13 +140,15 @@ export function useTelegramAuth() {
    * 开发模式模拟登录
    */
   const mockAuthenticate = useCallback(async () => {
+    console.log("=== 🧪 开发模式模拟认证 ===");
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     // 模拟网络延迟
+    console.log("⏳ 模拟网络延迟 1000ms...");
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
-      // 在开发模式下，使用特殊标识调用真实的 API
+      console.log("🌐 发送开发模式认证请求");
       const response = await fetch("/api/auth/telegram", {
         method: "POST",
         headers: {
@@ -112,8 +158,15 @@ export function useTelegramAuth() {
       });
 
       const data = await response.json();
+      console.log("📋 开发模式响应:", {
+        status: response.status,
+        success: data.success,
+        message: data.message,
+        hasUser: !!data.user,
+      });
 
       if (response.ok && data.success) {
+        console.log("✅ 开发模式认证成功");
         setAuthState({
           isLoading: false,
           isAuthenticated: true,
@@ -122,7 +175,7 @@ export function useTelegramAuth() {
         });
         return { success: true, user: data.user };
       } else {
-        // 如果 API 调用失败，使用本地模拟数据
+        console.log("⚠️ API 调用失败，使用本地模拟数据");
         setAuthState({
           isLoading: false,
           isAuthenticated: true,
@@ -132,7 +185,7 @@ export function useTelegramAuth() {
         return { success: true, user: MOCK_USER };
       }
     } catch (error) {
-      // 网络错误时使用本地模拟数据
+      console.error("🔄 网络错误，回退到本地模拟数据:", error);
       setAuthState({
         isLoading: false,
         isAuthenticated: true,
@@ -147,41 +200,72 @@ export function useTelegramAuth() {
    * 自动从 Telegram WebApp 获取 InitData 并验证
    */
   const autoAuthenticate = useCallback(async () => {
+    console.log("=== 🚀 自动身份验证开始 ===");
+
     if (typeof window === "undefined") {
+      console.log("🖥️ 服务端渲染环境，跳过认证");
       return;
     }
 
     try {
+      const devMode = isDevelopmentMode();
+      console.log("🔍 环境检测:", {
+        isDevelopmentMode: devMode,
+        hostname: window.location.hostname,
+        userAgent: navigator.userAgent.substring(0, 100),
+      });
+
       // 开发模式处理
-      if (isDevelopmentMode()) {
+      if (devMode) {
+        console.log("🛠️ 开发模式处理");
+
         // 检查是否有 Telegram WebApp 环境
         if (window.Telegram?.WebApp) {
+          console.log("📱 检测到 Telegram WebApp 环境");
           const tg = window.Telegram.WebApp;
           const initData = tg.initData;
 
+          console.log("📊 Telegram WebApp 信息:", {
+            platform: tg.platform,
+            version: tg.version,
+            colorScheme: tg.colorScheme,
+            hasInitData: !!initData,
+            initDataLength: initData?.length || 0,
+          });
+
           if (initData) {
+            console.log("✅ 找到真实 InitData，使用真实认证");
             await authenticate(initData);
           } else {
-            // 在开发模式下，如果没有真实的 initData，使用模拟数据
-            console.log("开发模式：使用模拟 Telegram 数据");
+            console.log("⚠️ 没有 InitData，使用模拟认证");
             await mockAuthenticate();
           }
         } else {
-          // 开发模式下没有 Telegram 环境，使用模拟数据
-          console.log("开发模式：模拟 Telegram WebApp 环境");
+          console.log("🤖 没有 Telegram 环境，使用模拟认证");
           await mockAuthenticate();
         }
         return;
       }
 
       // 生产模式处理
+      console.log("🏭 生产模式处理");
       if (window.Telegram?.WebApp) {
+        console.log("📱 检测到 Telegram WebApp 环境");
         const tg = window.Telegram.WebApp;
         const initData = tg.initData;
 
+        console.log("📊 生产模式 Telegram 信息:", {
+          platform: tg.platform,
+          version: tg.version,
+          hasInitData: !!initData,
+          initDataLength: initData?.length || 0,
+        });
+
         if (initData) {
+          console.log("✅ 找到 InitData，开始认证");
           await authenticate(initData);
         } else {
+          console.error("❌ 无法获取 Telegram InitData");
           setAuthState({
             isLoading: false,
             isAuthenticated: false,
@@ -190,6 +274,7 @@ export function useTelegramAuth() {
           });
         }
       } else {
+        console.error("❌ 不在 Telegram WebApp 环境中");
         setAuthState({
           isLoading: false,
           isAuthenticated: false,
@@ -198,6 +283,11 @@ export function useTelegramAuth() {
         });
       }
     } catch (error) {
+      console.error("💥 自动认证过程中发生错误:", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
       setAuthState({
         isLoading: false,
         isAuthenticated: false,
@@ -211,6 +301,7 @@ export function useTelegramAuth() {
    * 登出
    */
   const logout = useCallback(() => {
+    console.log("🚪 用户登出");
     setAuthState({
       isLoading: false,
       isAuthenticated: false,
@@ -223,13 +314,27 @@ export function useTelegramAuth() {
    * 清除错误状态
    */
   const clearError = useCallback(() => {
+    console.log("🧹 清除错误状态");
     setAuthState((prev) => ({ ...prev, error: null }));
   }, []);
 
   // 组件挂载时自动验证
   useEffect(() => {
+    console.log("🎬 useTelegramAuth hook 初始化，开始自动认证");
     autoAuthenticate();
   }, [autoAuthenticate]);
+
+  // 监听状态变化
+  useEffect(() => {
+    console.log("📊 认证状态更新:", {
+      isLoading: authState.isLoading,
+      isAuthenticated: authState.isAuthenticated,
+      hasUser: !!authState.user,
+      hasError: !!authState.error,
+      error: authState.error,
+      timestamp: new Date().toISOString(),
+    });
+  }, [authState]);
 
   return {
     ...authState,
@@ -240,6 +345,7 @@ export function useTelegramAuth() {
     isDevelopmentMode: isDevelopmentMode(),
   };
 }
+
 // 声明 Telegram WebApp 类型
 declare global {
   interface Window {

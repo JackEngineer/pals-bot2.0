@@ -27,24 +27,157 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
   const { checkUser, loading } = useUserActions();
   const setUser = useUserStore((state) => state.setUser);
 
+  // 添加初始化调试信息
+  useEffect(() => {
+    console.log("=== 🔍 TelegramAuth 组件初始化调试信息 ===");
+    console.log("🌍 环境信息:", {
+      NODE_ENV: process.env.NODE_ENV,
+      isDevelopmentMode,
+      hasWindow: typeof window !== "undefined",
+      hostname:
+        typeof window !== "undefined" ? window.location.hostname : "server",
+      userAgent:
+        typeof window !== "undefined"
+          ? navigator.userAgent.substring(0, 100)
+          : "server",
+    });
+
+    if (typeof window !== "undefined") {
+      console.log("📱 Telegram 环境检测:", {
+        hasTelegram: !!window.Telegram,
+        hasWebApp: !!window.Telegram?.WebApp,
+        platform: window.Telegram?.WebApp?.platform || "unknown",
+        version: window.Telegram?.WebApp?.version || "unknown",
+        colorScheme: window.Telegram?.WebApp?.colorScheme || "unknown",
+        initDataLength: window.Telegram?.WebApp?.initData?.length || 0,
+        initDataPreview: window.Telegram?.WebApp?.initData
+          ? window.Telegram.WebApp.initData.substring(0, 100) + "..."
+          : "无",
+      });
+    }
+
+    console.log("🔐 认证状态:", {
+      isLoading,
+      isAuthenticated,
+      hasUser: !!user,
+      hasError: !!error,
+      error: error,
+    });
+
+    if (user) {
+      console.log("👤 用户信息:", {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username,
+        language_code: user.language_code,
+        is_premium: user.is_premium,
+        has_photo: !!user.photo_url,
+      });
+    }
+  }, []);
+
+  // 监听认证状态变化
+  useEffect(() => {
+    console.log("📊 认证状态变化:", {
+      isLoading,
+      isAuthenticated,
+      hasUser: !!user,
+      hasError: !!error,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error("❌ 认证错误详情:", error);
+    }
+  }, [isLoading, isAuthenticated, user, error]);
+
   useEffect(() => {
     if (isAuthenticated && onAuthSuccess) {
+      console.log("✅ 认证成功，执行回调函数");
       onAuthSuccess();
     }
   }, [isAuthenticated, onAuthSuccess]);
 
   const handleLogin = async () => {
-    toast.success(`1${JSON.stringify(user)}`);
-    if (loading) return;
-    toast.success(`2${JSON.stringify(user)}`);
-    const userInfo = await checkUser(user!);
-    toast.success(`3${JSON.stringify(userInfo)}`);
-    if (!userInfo) return;
-    setUser(userInfo as UserInfo);
-    router.push("/home");
+    console.log("=== 🚀 开始登录流程 ===");
+    console.log("🔄 登录前状态检查:", {
+      loading,
+      hasUser: !!user,
+      user: user
+        ? {
+            id: user.id,
+            first_name: user.first_name,
+            username: user.username,
+          }
+        : null,
+    });
+
+    if (loading) {
+      console.log("⏳ 正在加载中，跳过本次登录请求");
+      return;
+    }
+
+    try {
+      console.log("🔍 调用 checkUser...");
+      const startTime = Date.now();
+
+      const userInfo = await checkUser(user!);
+      const duration = Date.now() - startTime;
+
+      console.log("📋 checkUser 完成:", {
+        duration: `${duration}ms`,
+        success: !!userInfo,
+        userInfo: userInfo
+          ? {
+              id: userInfo.id,
+              telegramId: userInfo.telegramId,
+              firstName: userInfo.firstName,
+              username: userInfo.username,
+            }
+          : null,
+      });
+
+      if (!userInfo) {
+        console.error("❌ checkUser 返回空值，登录中止");
+        toast.error("用户信息获取失败");
+        return;
+      }
+
+      console.log("💾 设置用户信息到状态管理...");
+      setUser(userInfo as UserInfo);
+
+      console.log("🏠 跳转到主页...");
+      router.push("/home");
+
+      console.log("✅ 登录流程完成");
+    } catch (error) {
+      console.error("💥 登录流程出错:", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+      });
+
+      toast.error(
+        "登录失败: " + (error instanceof Error ? error.message : "未知错误")
+      );
+    }
+  };
+
+  // 添加重试验证的调试
+  const handleRetryAuth = () => {
+    console.log("🔄 用户手动重试验证");
+    autoAuthenticate();
+  };
+
+  // 添加清除错误的调试
+  const handleClearError = () => {
+    console.log("🧹 用户清除错误状态");
+    clearError();
   };
 
   if (isLoading) {
+    console.log("⏳ 渲染加载状态");
     return (
       <div className="flex flex-col items-center justify-center p-6">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-500 mb-4"></div>
@@ -59,6 +192,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
   }
 
   if (error) {
+    console.log("❌ 渲染错误状态:", error);
     return (
       <div className="bottle-card rounded-lg p-6 max-w-md mx-auto border-l-4 border-red-400">
         {isDevelopmentMode && (
@@ -87,13 +221,13 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
         <div className="text-sm text-red-700 mb-4">{error}</div>
         <div className="flex gap-3">
           <button
-            onClick={clearError}
+            onClick={handleClearError}
             className="bg-red-100 hover:bg-red-200 text-red-800 font-medium py-2 px-4 rounded-md text-sm transition-colors"
           >
             清除错误
           </button>
           <button
-            onClick={autoAuthenticate}
+            onClick={handleRetryAuth}
             className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors"
           >
             重试验证
@@ -104,6 +238,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
   }
 
   if (isAuthenticated && user) {
+    console.log("✅ 渲染认证成功状态");
     return (
       <div className="bottle-card rounded-2xl p-6 max-w-md mx-auto shadow-lg border-l-4 border-ocean-400">
         {isDevelopmentMode && (
@@ -207,6 +342,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
   }
 
   // 不在 Telegram 环境中的默认状态
+  console.log("🤔 渲染默认状态（非 Telegram 环境）");
   return (
     <div className="bottle-card rounded-2xl p-6 max-w-md mx-auto shadow-lg">
       {isDevelopmentMode && (
