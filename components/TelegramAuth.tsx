@@ -128,14 +128,7 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
       console.log("📋 checkUser 完成:", {
         duration: `${duration}ms`,
         success: !!userInfo,
-        userInfo: userInfo
-          ? {
-              id: userInfo.id,
-              telegramId: userInfo.telegramId,
-              firstName: userInfo.firstName,
-              username: userInfo.username,
-            }
-          : null,
+        userInfo,
       });
 
       if (!userInfo) {
