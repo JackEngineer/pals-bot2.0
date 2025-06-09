@@ -13,9 +13,11 @@ export interface UserInfo {
 interface UserStore {
   user: UserInfo | null;
   isInitialized: boolean;
+  isLoading: boolean; // 添加加载状态
   setUser: (user: UserInfo) => void;
   clearUser: () => void;
   initialize: () => void;
+  setLoading: (loading: boolean) => void; // 添加设置加载状态的方法
 }
 
 export const useUserStore = create<UserStore>()(
@@ -23,15 +25,16 @@ export const useUserStore = create<UserStore>()(
     (set, get) => ({
       user: null,
       isInitialized: false,
+      isLoading: true, // 初始为加载状态
 
       setUser: (user) => {
         console.log("🔐 用户登录:", user.firstName);
-        set({ user, isInitialized: true });
+        set({ user, isInitialized: true, isLoading: false });
       },
 
       clearUser: () => {
         console.log("🚪 用户登出");
-        set({ user: null });
+        set({ user: null, isLoading: false });
 
         // 自动重定向功能（可选）
         if (typeof window !== "undefined") {
@@ -51,14 +54,37 @@ export const useUserStore = create<UserStore>()(
 
       initialize: () => {
         if (!get().isInitialized) {
-          set({ isInitialized: true });
+          console.log("📱 初始化用户状态管理");
+          set({ isInitialized: true, isLoading: false });
         }
+      },
+
+      setLoading: (loading) => {
+        set({ isLoading: loading });
       },
     }),
     {
       name: "user-storage",
       // 只持久化用户信息，不持久化初始化状态
       partialize: (state) => ({ user: state.user }),
+      onRehydrateStorage: () => {
+        console.log("🔄 正在恢复用户状态...");
+        return (state, error) => {
+          if (error) {
+            console.error("❌ 状态恢复失败:", error);
+          } else {
+            console.log(
+              "✅ 用户状态已恢复:",
+              state?.user ? state.user.firstName : "无用户"
+            );
+            // 状态恢复完成后，设置初始化为true
+            if (state) {
+              state.isInitialized = true;
+              state.isLoading = false;
+            }
+          }
+        };
+      },
     }
   )
 );

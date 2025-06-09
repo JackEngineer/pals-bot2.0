@@ -21,7 +21,7 @@ export function useUserActions() {
 
     if (!user) {
       console.error("❌ user 参数为空");
-      toast.error("❌ 用户参数为空");
+      toast.error("用户参数为空");
       return null;
     }
 
@@ -30,7 +30,6 @@ export function useUserActions() {
     try {
       const apiUrl = `/api/user/telegram/${user.id}`;
       console.log("🌐 尝试获取现有用户:", apiUrl);
-      toast.info(`🔍 查询用户 ${user.id}...`);
 
       const startTime = Date.now();
       const data = await get(apiUrl);
@@ -44,7 +43,6 @@ export function useUserActions() {
 
       if (!data) {
         console.log("👤 用户不存在，创建新用户");
-        toast.info("👤 用户不存在，正在创建...");
 
         const newUser = await addUser(user);
         console.log("🆕 新用户创建结果:", {
@@ -52,17 +50,14 @@ export function useUserActions() {
           newUser: newUser,
         });
 
-        if (newUser) {
-          toast.success(`✅ 新用户创建成功`);
-        } else {
-          toast.error("❌ 新用户创建失败");
+        if (!newUser) {
+          toast.error("用户创建失败");
         }
 
         return newUser;
       }
 
       console.log("✅ 找到现有用户:", data);
-      toast.success(`✅ 找到用户`);
       return data;
     } catch (error) {
       console.error("💥 checkUser 出错:", {
@@ -71,11 +66,10 @@ export function useUserActions() {
       });
 
       const errorMsg = error instanceof Error ? error.message : "获取用户失败";
-      toast.error(`💥 获取用户失败: ${errorMsg}`);
+      toast.error(`获取用户失败: ${errorMsg}`);
 
       // 如果获取失败，尝试创建新用户
       console.log("🔄 获取失败，尝试创建新用户");
-      toast.info("🔄 尝试创建新用户...");
 
       try {
         const newUser = await addUser(user);
@@ -84,10 +78,8 @@ export function useUserActions() {
           newUser: newUser,
         });
 
-        if (newUser) {
-          toast.success(`✅ 备用创建成功`);
-        } else {
-          toast.error("❌ 备用创建也失败");
+        if (!newUser) {
+          toast.error("创建用户失败");
         }
 
         return newUser;
@@ -95,7 +87,7 @@ export function useUserActions() {
         console.error("💥 创建用户也失败:", addError);
         const addErrorMsg =
           addError instanceof Error ? addError.message : "创建用户失败";
-        toast.error(`💥 创建用户失败: ${addErrorMsg}`);
+        toast.error(`创建用户失败: ${addErrorMsg}`);
         return null;
       }
     } finally {
@@ -130,7 +122,6 @@ export function useUserActions() {
       };
 
       console.log("🌐 发送创建用户请求:", payload);
-      toast.info("🆕 正在创建用户...");
 
       const startTime = Date.now();
       const data = await post(`/api/user/add`, payload);
@@ -142,10 +133,8 @@ export function useUserActions() {
         data: data,
       });
 
-      if (data) {
-        toast.success(`✅ 用户创建成功 (${duration}ms)`);
-      } else {
-        toast.error("❌ 创建用户返回空数据");
+      if (!data) {
+        toast.error("创建用户返回空数据");
       }
 
       return data;
@@ -156,7 +145,7 @@ export function useUserActions() {
       });
 
       const errorMsg = error instanceof Error ? error.message : "创建用户失败";
-      toast.error(`💥 创建用户失败: ${errorMsg}`);
+      toast.error(`创建用户失败: ${errorMsg}`);
       return null;
     } finally {
       setLoading(false);
