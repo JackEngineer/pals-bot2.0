@@ -101,6 +101,10 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
 
   const handleLogin = async () => {
     console.log("=== 🚀 开始登录流程 ===");
+
+    // 显示开始登录的toast
+    toast.info("🚀 开始登录流程...");
+
     console.log("🔄 登录前状态检查:", {
       loading,
       hasUser: !!user,
@@ -115,33 +119,59 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
 
     if (loading) {
       console.log("⏳ 正在加载中，跳过本次登录请求");
+      toast.warning("⏳ 正在处理中，请稍候...");
       return;
     }
 
+    if (!user) {
+      console.error("❌ 用户信息不存在，无法登录");
+      toast.error("❌ 用户信息不存在");
+      return;
+    }
+
+    // 显示用户信息
+    toast.info(`👤 用户: ${user.first_name} (ID: ${user.id})`);
+
     try {
       console.log("🔍 调用 checkUser...");
-      const startTime = Date.now();
+      toast.info("🔍 正在检查用户信息...");
 
-      const userInfo = await checkUser(user!);
+      const startTime = Date.now();
+      const userInfo = await checkUser(user);
       const duration = Date.now() - startTime;
 
       console.log("📋 checkUser 完成:", {
         duration: `${duration}ms`,
         success: !!userInfo,
-        userInfo,
+        userInfo: userInfo
+          ? {
+              id: userInfo.id,
+              telegramId: userInfo.telegramId,
+              firstName: userInfo.firstName,
+              username: userInfo.username,
+            }
+          : null,
       });
 
       if (!userInfo) {
         console.error("❌ checkUser 返回空值，登录中止");
-        toast.error("用户信息获取失败");
+        toast.error("❌ 用户信息获取失败，请重试");
         return;
       }
 
+      toast.success(`✅ 用户检查成功: ${userInfo.firstName}`);
       console.log("💾 设置用户信息到状态管理...");
       setUser(userInfo as UserInfo);
 
-      console.log("🏠 跳转到主页...");
-      router.push("/home");
+      toast.info("🏠 准备跳转到主页...");
+      console.log("🏠 准备跳转到主页...");
+
+      // 添加延迟，让用户看到成功消息
+      setTimeout(() => {
+        console.log("🚀 执行路由跳转...");
+        router.push("/home");
+        toast.success("🎉 登录成功！正在跳转...");
+      }, 1500);
 
       console.log("✅ 登录流程完成");
     } catch (error) {
@@ -151,9 +181,8 @@ export default function TelegramAuth({ onAuthSuccess }: TelegramAuthProps) {
         timestamp: new Date().toISOString(),
       });
 
-      toast.error(
-        "登录失败: " + (error instanceof Error ? error.message : "未知错误")
-      );
+      const errorMsg = error instanceof Error ? error.message : "未知错误";
+      toast.error(`💥 登录失败: ${errorMsg}`);
     }
   };
 

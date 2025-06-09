@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { TelegramUser } from "@/lib/telegram-auth";
+import { toast } from "sonner";
 
 /**
  * 身份验证状态接口
@@ -95,6 +96,7 @@ export function useTelegramAuth() {
 
       if (response.ok && data.success) {
         console.log("✅ 身份验证成功");
+        toast.success(`✅ 身份验证成功: ${data.user.first_name}`);
         setAuthState({
           isLoading: false,
           isAuthenticated: true,
@@ -110,6 +112,7 @@ export function useTelegramAuth() {
           fullResponse: data,
         });
 
+        toast.error(`❌ 身份验证失败: ${errorMsg}`);
         setAuthState({
           isLoading: false,
           isAuthenticated: false,
@@ -126,6 +129,7 @@ export function useTelegramAuth() {
       });
 
       const errorMsg = "网络请求失败，请检查网络连接";
+      toast.error(`💥 ${errorMsg}`);
       setAuthState({
         isLoading: false,
         isAuthenticated: false,
@@ -167,6 +171,7 @@ export function useTelegramAuth() {
 
       if (response.ok && data.success) {
         console.log("✅ 开发模式认证成功");
+        toast.success(`✅ 模拟认证成功: ${data.user.first_name}`);
         setAuthState({
           isLoading: false,
           isAuthenticated: true,
@@ -176,6 +181,7 @@ export function useTelegramAuth() {
         return { success: true, user: data.user };
       } else {
         console.log("⚠️ API 调用失败，使用本地模拟数据");
+        toast.info("⚠️ 使用本地模拟数据");
         setAuthState({
           isLoading: false,
           isAuthenticated: true,
@@ -186,6 +192,7 @@ export function useTelegramAuth() {
       }
     } catch (error) {
       console.error("🔄 网络错误，回退到本地模拟数据:", error);
+      toast.info("🔄 使用本地模拟数据");
       setAuthState({
         isLoading: false,
         isAuthenticated: true,
@@ -215,9 +222,13 @@ export function useTelegramAuth() {
         userAgent: navigator.userAgent.substring(0, 100),
       });
 
+      // 显示认证开始的toast
+      toast.info("🔐 开始身份验证...");
+
       // 开发模式处理
       if (devMode) {
         console.log("🛠️ 开发模式处理");
+        toast.info("🛠️ 开发模式");
 
         // 检查是否有 Telegram WebApp 环境
         if (window.Telegram?.WebApp) {
@@ -235,13 +246,16 @@ export function useTelegramAuth() {
 
           if (initData) {
             console.log("✅ 找到真实 InitData，使用真实认证");
+            toast.info("📱 使用真实 Telegram 数据");
             await authenticate(initData);
           } else {
             console.log("⚠️ 没有 InitData，使用模拟认证");
+            toast.info("🧪 使用模拟数据");
             await mockAuthenticate();
           }
         } else {
           console.log("🤖 没有 Telegram 环境，使用模拟认证");
+          toast.info("🤖 模拟 Telegram 环境");
           await mockAuthenticate();
         }
         return;
@@ -249,6 +263,8 @@ export function useTelegramAuth() {
 
       // 生产模式处理
       console.log("🏭 生产模式处理");
+      toast.info("🏭 生产模式认证");
+
       if (window.Telegram?.WebApp) {
         console.log("📱 检测到 Telegram WebApp 环境");
         const tg = window.Telegram.WebApp;
@@ -263,23 +279,28 @@ export function useTelegramAuth() {
 
         if (initData) {
           console.log("✅ 找到 InitData，开始认证");
+          toast.info("📱 正在验证 Telegram 数据...");
           await authenticate(initData);
         } else {
           console.error("❌ 无法获取 Telegram InitData");
+          const errorMsg = "无法获取 Telegram InitData";
+          toast.error(`❌ ${errorMsg}`);
           setAuthState({
             isLoading: false,
             isAuthenticated: false,
             user: null,
-            error: "无法获取 Telegram InitData",
+            error: errorMsg,
           });
         }
       } else {
         console.error("❌ 不在 Telegram WebApp 环境中");
+        const errorMsg = "不在 Telegram WebApp 环境中";
+        toast.error(`❌ ${errorMsg}`);
         setAuthState({
           isLoading: false,
           isAuthenticated: false,
           user: null,
-          error: "不在 Telegram WebApp 环境中",
+          error: errorMsg,
         });
       }
     } catch (error) {
@@ -288,11 +309,13 @@ export function useTelegramAuth() {
         stack: error instanceof Error ? error.stack : undefined,
       });
 
+      const errorMsg = "获取 Telegram 数据时发生错误";
+      toast.error(`💥 ${errorMsg}`);
       setAuthState({
         isLoading: false,
         isAuthenticated: false,
         user: null,
-        error: "获取 Telegram 数据时发生错误",
+        error: errorMsg,
       });
     }
   }, [authenticate, mockAuthenticate]);
